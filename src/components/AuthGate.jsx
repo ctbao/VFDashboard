@@ -1,8 +1,10 @@
 import { useStore } from "@nanostores/react";
+import { useTranslation } from "react-i18next";
 import { vehicleStore } from "../stores/vehicleStore";
 
 export default function AuthGate() {
   const { isInitialized, vin } = useStore(vehicleStore);
+  const { t } = useTranslation("common");
 
   // 1. Loading State (Not initialized yet or checking auth)
   if (!isInitialized || !vin) {
@@ -20,7 +22,7 @@ export default function AuthGate() {
         </div>
         <div className="flex flex-col items-center space-y-1">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] animate-pulse">
-            Authenticating
+            {t("authenticating")}
           </p>
           <div className="flex gap-1">
             <div className="w-1 h-1 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>

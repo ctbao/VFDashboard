@@ -1,4 +1,5 @@
 import React from "react";
+import i18next from "i18next";
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -35,16 +36,16 @@ class ErrorBoundary extends React.Component {
               </svg>
             </div>
             <h3 className="text-sm font-bold text-red-900 uppercase">
-              Component Error
+              {i18next.t("common:componentError")}
             </h3>
             <p className="text-xs text-red-600 leading-relaxed max-w-[200px] mx-auto">
-              Something went wrong loading this part of the dashboard.
+              {i18next.t("common:componentErrorMsg")}
             </p>
             <button
               onClick={() => this.setState({ hasError: false })}
               className="px-4 py-2 bg-white border border-red-200 text-red-700 text-[10px] font-bold uppercase rounded-full hover:bg-red-50 transition-colors"
             >
-              Try Again
+              {i18next.t("common:tryAgain")}
             </button>
           </div>
         )

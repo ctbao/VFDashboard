@@ -1,11 +1,13 @@
 import { useStore } from "@nanostores/react";
+import { useTranslation } from "react-i18next";
 import { vehicleStore } from "../stores/vehicleStore";
 import { mqttStore } from "../stores/mqttStore";
-import { TIRE_PRESSURE, VEHICLE_STATUS_LABELS } from "../constants/vehicle";
+import { TIRE_PRESSURE } from "../constants/vehicle";
 
 export default function SystemHealth() {
   const data = useStore(vehicleStore);
   const mqtt = useStore(mqttStore);
+  const { t } = useTranslation(["common", "vehicle"]);
   const isWaiting = mqtt.status === "connected" || mqtt.status === "connecting";
 
   // Helpers (Unified Theme Colors)
@@ -260,7 +262,7 @@ export default function SystemHealth() {
 
   const items = [
     {
-      label: VEHICLE_STATUS_LABELS.SAFETY,
+      label: t("vehicle:safetyCheck"),
       value: safety.status,
       detail: safety.detail,
       bg: safety.bg,
@@ -269,7 +271,7 @@ export default function SystemHealth() {
       iconColor: safety.iconColor,
     },
     {
-      label: VEHICLE_STATUS_LABELS.HANDBRAKE,
+      label: t("vehicle:handbrake"),
       value: handbrake.status,
       detail: handbrake.detail,
       bg: handbrake.bg,
@@ -278,7 +280,7 @@ export default function SystemHealth() {
       iconColor: handbrake.iconColor,
     },
     {
-      label: VEHICLE_STATUS_LABELS.DOORS,
+      label: t("vehicle:doorsAndLocks"),
       value: door.status,
       detail: door.detail,
       bg: door.bg,
@@ -287,7 +289,7 @@ export default function SystemHealth() {
       iconColor: door.iconColor,
     },
     {
-      label: VEHICLE_STATUS_LABELS.WINDOWS,
+      label: t("vehicle:windows"),
       value: windowStat.status,
       detail: windowStat.detail,
       bg: windowStat.bg,
@@ -296,7 +298,7 @@ export default function SystemHealth() {
       iconColor: windowStat.iconColor,
     },
     {
-      label: VEHICLE_STATUS_LABELS.TIRES,
+      label: t("vehicle:tires"),
       value: tire.status,
       detail: tire.detail,
       bg: tire.bg,
@@ -305,7 +307,7 @@ export default function SystemHealth() {
       iconColor: tire.iconColor,
     },
     {
-      label: VEHICLE_STATUS_LABELS.SERVICE,
+      label: t("vehicle:service"),
       value: service.status,
       detail: service.detail,
       bg: service.bg,
@@ -314,24 +316,24 @@ export default function SystemHealth() {
       iconColor: service.iconColor,
     },
     {
-      label: VEHICLE_STATUS_LABELS.TBOX,
+      label: t("vehicle:tbox"),
       value:
         data.tbox_version && data.tbox_version !== "--"
           ? data.tbox_version
           : "N/A",
-      detail: "T-Box Software Version",
+      detail: t("vehicle:tboxSoftware"),
       bg: "bg-gray-50",
       txt: "text-gray-600",
       icon: "wifi",
       iconColor: "text-blue-500",
     },
     {
-      label: VEHICLE_STATUS_LABELS.FIRMWARE,
+      label: t("vehicle:firmware"),
       value:
         data.firmware_version && data.firmware_version !== "--"
           ? data.firmware_version
           : "N/A",
-      detail: "Vehicle Firmware Version",
+      detail: t("vehicle:vehicleFirmware"),
       bg: "bg-gray-50",
       txt: "text-gray-600",
       icon: "chip",
@@ -502,7 +504,7 @@ export default function SystemHealth() {
             d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
           />
         </svg>
-        Vehicle Status
+        {t("common:vehicleStatus")}
       </h3>
 
       {/* MOBILE ONLY: Climate Section */}
@@ -512,7 +514,7 @@ export default function SystemHealth() {
         {/* Outside Temperature */}
         <div className="p-2 rounded-xl text-center bg-gray-50 border border-gray-100 flex flex-col justify-center min-h-[60px]">
           <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-            Outside
+          {t("common:outside")}
           </p>
           <div className="flex items-center justify-center gap-1.5">
             <svg
@@ -539,7 +541,7 @@ export default function SystemHealth() {
         {/* Cabin Temperature */}
         <div className="p-2 rounded-xl text-center bg-gray-50 border border-gray-100 flex flex-col justify-center min-h-[60px]">
           <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-            Cabin
+          {t("common:cabin")}
           </p>
           <span className={`text-base font-black leading-none ${data.inside_temp !== null && data.inside_temp !== undefined ? "text-gray-700" : isWaiting ? "text-gray-300 animate-pulse" : "text-gray-400"}`}>
             {data.inside_temp !== null && data.inside_temp !== undefined
@@ -555,7 +557,7 @@ export default function SystemHealth() {
           <p
             className={`text-[8px] font-bold uppercase tracking-wider mb-1 ${(data.fan_speed ?? 0) > 0 ? "text-blue-400" : "text-gray-400"}`}
           >
-            Fan
+          {t("common:fan")}
           </p>
           <div className="flex items-center justify-center gap-1">
             {(data.fan_speed ?? 0) > 0 ? (
@@ -581,7 +583,7 @@ export default function SystemHealth() {
               </>
             ) : (
               <span className="text-base font-black text-gray-400 leading-none uppercase">
-                Off
+            Off
               </span>
             )}
           </div>

@@ -1,7 +1,13 @@
+import "../i18n";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { useStore } from "@nanostores/react";
+import { currentLanguage, setLanguage } from "../stores/languageStore";
 import { api } from "../services/api";
 
 export default function Login({ bgImage }) {
+  const { t, i18n } = useTranslation(["login", "common"]);
+  const lang = useStore(currentLanguage);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [region, setRegion] = useState("vn"); // Default to Vietnam
@@ -9,6 +15,13 @@ export default function Login({ bgImage }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [regionDropdownOpen, setRegionDropdownOpen] = useState(false);
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+
+  const handleLangChange = (newLang) => {
+    setLanguage(newLang);
+    i18n.changeLanguage(newLang);
+    setLangDropdownOpen(false);
+  };
 
   useEffect(() => {
     // Auto-redirect if already authenticated (check metadata cookie)
@@ -113,7 +126,7 @@ export default function Login({ bgImage }) {
                   type="email"
                   required
                   className="relative block w-full rounded-xl border-gray-200 bg-gray-50 py-3.5 px-4 text-gray-900 focus:z-10 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200 font-medium placeholder:text-gray-400 text-sm"
-                  placeholder="Email address"
+                  placeholder={t("login:emailPlaceholder")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -123,7 +136,7 @@ export default function Login({ bgImage }) {
                   type="password"
                   required
                   className="relative block w-full rounded-xl border-gray-200 bg-gray-50 py-3.5 px-4 text-gray-900 focus:z-10 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200 font-medium placeholder:text-gray-400 text-sm"
-                  placeholder="Password"
+                  placeholder={t("login:passwordPlaceholder")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -149,12 +162,56 @@ export default function Login({ bgImage }) {
                 </label>
               </div>
 
+              {/* Language Selector */}
+              <div className="text-sm flex items-center bg-gray-50 px-3 py-1.5 rounded-lg">
+                <label className="font-bold text-gray-500 text-xs uppercase tracking-wider mr-2">
+                  {t("common:language")}
+                </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setLangDropdownOpen(!langDropdownOpen)}
+                    className="flex items-center gap-2 bg-transparent text-gray-900 text-sm font-bold focus:outline-none"
+                  >
+                    {lang === "vi" ? "🇻🇳 Tiếng Việt" : "🇺🇸 English"}
+                    <svg
+                      className={`w-3 h-3 text-gray-400 transition-transform duration-200 ${langDropdownOpen ? "rotate-180" : ""}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {langDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setLangDropdownOpen(false)}></div>
+                      <div className="absolute top-full right-0 mt-2 w-44 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 p-1.5 z-20 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                        {[
+                          { val: "vi", label: "🇻🇳 Tiếng Việt" },
+                          { val: "en", label: "🇺🇸 English" },
+                        ].map((opt) => (
+                          <button
+                            key={opt.val}
+                            type="button"
+                            onClick={() => handleLangChange(opt.val)}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm font-bold transition-colors ${lang === opt.val ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
               <div className="text-sm flex items-center bg-gray-50 px-3 py-1.5 rounded-lg">
                 <label
                   htmlFor="region"
                   className="font-bold text-gray-500 text-xs uppercase tracking-wider mr-2"
                 >
-                  Region
+                  {t("login:region")}
                 </label>
                 <div className="relative">
                   <button
@@ -163,10 +220,10 @@ export default function Login({ bgImage }) {
                     className="flex items-center gap-2 bg-transparent text-gray-900 text-sm font-bold focus:outline-none"
                   >
                     {region === "vn"
-                      ? "Vietnam"
+                      ? t("login:regionVN")
                       : region === "us"
-                        ? "United States"
-                        : "Europe"}
+                        ? t("login:regionUS")
+                        : t("login:regionEU")}
                     <svg
                       className={`w-3 h-3 text-gray-400 transition-transform duration-200 ${regionDropdownOpen ? "rotate-180" : ""}`}
                       fill="none"
@@ -194,9 +251,9 @@ export default function Login({ bgImage }) {
                       {/* Menu */}
                       <div className="absolute top-full right-0 mt-2 w-40 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 p-1.5 z-20 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
                         {[
-                          { val: "vn", label: "Vietnam" },
-                          { val: "us", label: "United States" },
-                          { val: "eu", label: "Europe" },
+                          { val: "vn", label: t("login:regionVN") },
+                          { val: "us", label: t("login:regionUS") },
+                          { val: "eu", label: t("login:regionEU") },
                         ].map((opt) => (
                           <button
                             key={opt.val}
@@ -249,7 +306,7 @@ export default function Login({ bgImage }) {
                     ></path>
                   </svg>
                 ) : (
-                  "Sign In"
+                  t("login:signIn")
                 )}
               </button>
             </div>

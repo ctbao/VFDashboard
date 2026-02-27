@@ -1,0 +1,19 @@
+{
+  "title": "Sign In",
+  "emailPlaceholder": "Email address",
+  "passwordPlaceholder": "Password",
+  "rememberMe": "Remember Me",
+  "region": "Region",
+  "regionVietnam": "Vietnam",
+  "regionUS": "United States",
+  "regionEurope": "Europe",
+  "signIn": "Sign In",
+  "loginFailed": "Login failed",
+  "communityDescription": "Open-source, non-profit project — sharing passion for VinFast EV technology.",
+  "communityDiscussion": "Discuss the project at",
+  "communityGroup": "ANH EM VF9 - VF9 CLUB",
+  "disclaimer": "Not affiliated with, endorsed, or sponsored by VinFast. VinFast is a registered trademark of VinFast Commercial and Services Trading LLC.",
+  "madeWith": "Made with",
+  "madeIn": "in Vietnam",
+  "viewSource": "View Source on GitHub"
+}

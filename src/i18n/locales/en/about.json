@@ -1,0 +1,37 @@
+{
+  "title": "VinFast Dashboard",
+  "openSourceBy": "Open Source by",
+  "club": "VF9 Club Vietnam",
+  "version": "v1.0.0",
+  "versionStable": "v1.0.0 (Stable)",
+  "viewSourceGitHub": "View Source on GitHub",
+  "madeWithLove": "Made with ❤️ in Vietnam",
+  "disclaimer": "Disclaimer: This software is not affiliated with, endorsed by, or connected to VinFast Auto or its subsidiaries. It is provided \"as is\" for educational and personal use only.",
+  "tagline": "A tool for enthusiasts, by enthusiasts.",
+  "notAffiliated": "Not affiliated with VinFast Auto.",
+  "visualizingHiddenData": "Visualizing Hidden Data",
+
+  "mobileDescription": "A community hobby project developed to provide deeper insights into your vehicle's data. We visualize raw telemetry from VinFast servers to show details often missing from the official app.",
+
+  "mainGoals": "Main Goals",
+  "goals": {
+    "visualizeHidden": "Visualize hidden data (SOH, ECU versions)",
+    "clearMonitoring": "Clear, intuitive status monitoring",
+    "communityDriven": "Community-driven & Non-commercial"
+  },
+
+  "desktopIntro1": "VinFast Dashboard is an open-source project initiated by members of",
+  "desktopIntro2": "Our mission is to build a comprehensive tool that helps users visualize vehicle data more intuitively. By leveraging raw telemetry, we surface valuable insights—such as",
+  "batterySOH": "Battery SOH",
+  "and": "and",
+  "ecuVersions": "ECU Versions",
+  "desktopIntro3": "—often not visible in the official app.",
+  "desktopIntro4": "This is strictly a non-commercial, hobbyist initiative created purely out of passion for technology and the VinFast community.",
+
+  "features": {
+    "deeperInsights": "Deeper Insights",
+    "deeperInsightsDesc": "See what's under the hood with raw visualization.",
+    "realTimeData": "Real-time Data",
+    "realTimeDataDesc": "Live updates for battery, charging, and climate status."
+  }
+}

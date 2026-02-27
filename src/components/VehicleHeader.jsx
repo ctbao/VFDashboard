@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "@nanostores/react";
 import {
   vehicleStore,
@@ -7,6 +8,7 @@ import {
 } from "../stores/vehicleStore";
 import { api } from "../services/api";
 import { mqttStore } from "../stores/mqttStore";
+import { currentLanguage, setLanguage } from "../stores/languageStore";
 import AboutModal from "./AboutModal";
 
 // Generate a local SVG avatar to avoid third-party avatar requests.
@@ -150,9 +152,18 @@ const WeatherIcon = ({ temp, code }) => {
 export default function VehicleHeader({ onOpenCharging, onOpenTelemetry }) {
   const vehicle = useStore(vehicleStore);
   const mqtt = useStore(mqttStore);
+  const lang = useStore(currentLanguage);
+  const { t, i18n } = useTranslation(["common", "dashboard", "vehicle"]);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [toolsOpen, setToolsOpen] = React.useState(false);
   const [showAbout, setShowAbout] = React.useState(false);
+  const [langOpen, setLangOpen] = React.useState(false);
+
+  const handleLangChange = (newLang) => {
+    setLanguage(newLang);
+    i18n.changeLanguage(newLang);
+    setLangOpen(false);
+  };
 
   const handleRefresh = () => {
     refreshVehicle(vehicle.vin);
@@ -464,7 +475,7 @@ export default function VehicleHeader({ onOpenCharging, onOpenTelemetry }) {
                 ></div>
 
                 {/* Dropdown Menu */}
-                <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right overflow-hidden">
+                <div className="absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-1.5rem)] bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right overflow-x-hidden overflow-y-auto max-h-[calc(100dvh-4.5rem)]">
                   {/* User Section */}
                   <div className="px-4 py-3 border-b border-gray-50 bg-gray-50/30">
                     <p className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest mb-1">
@@ -499,7 +510,7 @@ export default function VehicleHeader({ onOpenCharging, onOpenTelemetry }) {
                       </p>
                     </div>
 
-                    <div className="max-h-64 overflow-y-auto">
+                    <div>
                       {(vehicle.vehicles || []).map((v) => {
                         const isSelected = v.vinCode === vehicle.vin;
                         const cached = vehicle.vehicleCache[v.vinCode] || {};
@@ -520,7 +531,7 @@ export default function VehicleHeader({ onOpenCharging, onOpenTelemetry }) {
                             }}
                             className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all hover:bg-blue-50/50 group ${isSelected ? "bg-blue-50/80" : ""}`}
                           >
-                            <div className="relative h-12 w-16 bg-gray-50 rounded-lg overflow-hidden border border-gray-100 p-1 flex items-center justify-center shrink-0">
+                            <div className="relative h-10 w-12 md:h-12 md:w-16 bg-gray-50 rounded-lg overflow-hidden border border-gray-100 p-1 flex items-center justify-center shrink-0">
                               <img
                                 src={img || "/logo.png"}
                                 className="w-full h-full object-contain drop-shadow-sm group-hover:scale-110 transition-transform"
@@ -582,8 +593,41 @@ export default function VehicleHeader({ onOpenCharging, onOpenTelemetry }) {
                         d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    About This App
+                    {t("common:aboutApp")}
                   </button>
+
+                  {/* Language Selector */}
+                  <div>
+                    <button
+                      onClick={() => setLangOpen(!langOpen)}
+                      className="w-full text-left px-4 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                    >
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                      </svg>
+                      {lang === "vi" ? "🇻🇳 Tiếng Việt" : "🇺🇸 English"}
+                      <svg className={`w-3 h-3 ml-auto text-gray-400 transition-transform ${langOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {langOpen && (
+                      <div className="mx-3 mb-1 rounded-xl border border-gray-100 bg-gray-50 p-1">
+                        {[
+                          { val: "vi", label: "🇻🇳 Tiếng Việt" },
+                          { val: "en", label: "🇺🇸 English" },
+                        ].map((opt) => (
+                          <button
+                            key={opt.val}
+                            type="button"
+                            onClick={() => handleLangChange(opt.val)}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm font-bold transition-colors ${lang === opt.val ? "bg-white text-blue-600 shadow-sm" : "text-gray-600 hover:bg-white"}`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   <button
                     onClick={handleLogout}
@@ -602,7 +646,7 @@ export default function VehicleHeader({ onOpenCharging, onOpenTelemetry }) {
                         d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                       />
                     </svg>
-                    Sign Out
+                    {t("common:signOut")}
                   </button>
                 </div>
               </>

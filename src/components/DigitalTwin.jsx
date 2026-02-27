@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "@nanostores/react";
 import { vehicleStore, switchVehicle } from "../stores/vehicleStore";
 import { GEARS } from "../constants/vehicle";
@@ -18,6 +19,7 @@ const formatOdometer = (value) => {
 };
 
 export default function DigitalTwin() {
+  const { t } = useTranslation(["vehicle", "common"]);
   const data = useStore(vehicleStore);
   const [imageLoaded, setImageLoaded] = React.useState(false);
   const imgRef = React.useRef(null);
@@ -162,36 +164,36 @@ export default function DigitalTwin() {
 
   // Door warnings with detail
   const openDoors = [];
-  if (data.door_fl) openDoors.push("Front Left");
-  if (data.door_fr) openDoors.push("Front Right");
-  if (data.door_rl) openDoors.push("Rear Left");
-  if (data.door_rr) openDoors.push("Rear Right");
+  if (data.door_fl) openDoors.push(t("vehicle:frontLeft"));
+  if (data.door_fr) openDoors.push(t("vehicle:frontRight"));
+  if (data.door_rl) openDoors.push(t("vehicle:rearLeft"));
+  if (data.door_rr) openDoors.push(t("vehicle:rearRight"));
   if (openDoors.length > 0) {
     warnings.push({
-      label: "Door Open",
+      label: t("vehicle:doorOpen"),
       detail: openDoors.join(", "),
     });
   }
 
   if (data.trunk_status) {
     warnings.push({
-      label: "Trunk Open",
-      detail: "Rear trunk is open",
+      label: t("vehicle:trunkOpen"),
+      detail: t("vehicle:rearTrunkOpen"),
     });
   }
 
   if (data.hood_status) {
     warnings.push({
-      label: "Hood Open",
-      detail: "Front hood is open",
+      label: t("vehicle:hoodOpen"),
+      detail: t("vehicle:frontHoodOpen"),
     });
   }
 
   // Central Lock: false means UNLOCKED (Warning)
   if (data.central_lock_status === false || data.is_locked === false) {
     warnings.push({
-      label: "Unlocked",
-      detail: "Vehicle is not locked",
+      label: t("vehicle:unlocked"),
+      detail: t("vehicle:vehicleNotLocked"),
     });
   }
 
@@ -227,7 +229,7 @@ export default function DigitalTwin() {
             {/* Odometer (Right) */}
             <div className="flex flex-col items-end leading-none shrink-0">
               <span className="text-[8px] md:text-[9px] font-bold text-blue-600 uppercase tracking-tighter mb-0.5">
-                Odometer
+                {t("vehicle:odometer")}
               </span>
               <div className="flex items-baseline gap-1 animate-in fade-in slide-in-from-right-4 duration-700 delay-300">
                 {data.vin &&
@@ -288,7 +290,7 @@ export default function DigitalTwin() {
           {/* Row 3: Warranty Section (Existing, with reduced mt) */}
           <div className="mt-1.5 pt-1.5 border-t border-gray-100 flex flex-col gap-0.5 animate-in fade-in slide-in-from-left-4 duration-700 delay-500">
             <p className="text-[8px] md:text-[9px] font-bold text-gray-400 uppercase tracking-wider">
-              Warranty Expires
+              {t("vehicle:warrantyExpires")}
             </p>
             <div className="flex items-center gap-2 text-xs font-bold text-gray-600 font-mono">
               <span
@@ -449,28 +451,28 @@ export default function DigitalTwin() {
         <TireCard
           pressure={data.tire_pressure_fr}
           temp={data.tire_temp_fr}
-          label="FRONT RIGHT"
+          label={t("vehicle:frontRight")}
           positionClass="top-[25%] left-[1%] md:left-[8%]"
         />
 
         <TireCard
           pressure={data.tire_pressure_rr}
           temp={data.tire_temp_rr}
-          label="REAR RIGHT"
+          label={t("vehicle:rearRight")}
           positionClass="top-[25%] right-[1%] md:right-[8%]"
         />
 
         <TireCard
           pressure={data.tire_pressure_fl}
           temp={data.tire_temp_fl}
-          label="FRONT LEFT"
+          label={t("vehicle:frontLeft")}
           positionClass="bottom-[8%] md:bottom-[2%] left-[2%] md:left-[8%]"
         />
 
         <TireCard
           pressure={data.tire_pressure_rl}
           temp={data.tire_temp_rl}
-          label="REAR LEFT"
+          label={t("vehicle:rearLeft")}
           positionClass="bottom-[8%] md:bottom-[2%] right-[2%] md:right-[8%]"
         />
       </div>
@@ -560,7 +562,7 @@ export default function DigitalTwin() {
                   d="M5 13l4 4L19 7"
                 />
               </svg>
-              Ready
+              {t("vehicle:ready")}
             </span>
           )}
         </div>

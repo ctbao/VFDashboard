@@ -17,7 +17,7 @@ const ogImageURL = new URL(ogImage, "https://dashboard.vf9.club").href;
 import '../styles/global.css';
 ---
 
-<html lang="en">
+<html lang="vi" id="html-root">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width" />
@@ -96,5 +96,12 @@ import '../styles/global.css';
 	</head>
 	<body class="bg-gray-50 h-[100dvh] w-screen overflow-hidden md:h-auto md:w-auto md:overflow-y-auto text-gray-900 selection:bg-blue-500 selection:text-white">
         <slot />
+		<script>
+			// Sync html[lang] with stored language preference
+			const stored = localStorage.getItem('vf_language');
+			if (stored && document.documentElement.lang !== stored) {
+				document.documentElement.lang = stored;
+			}
+		</script>
 	</body>
 </html>
