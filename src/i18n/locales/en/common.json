@@ -44,6 +44,13 @@
   "export": "Export",
   "refreshing": "Refreshing...",
   "updating": "Updating...",
+  "cached": "Cached",
+  "menu": "Menu",
+  "justNow": "just now",
+  "secondsAgo": "{{count}}s ago",
+  "minutesAgo": "{{count}}m ago",
+  "hoursAgo": "{{count}}h ago",
+  "daysAgo": "{{count}}d ago",
   "currentUser": "Current User",
   "yourVehicles": "Your Vehicles",
   "roles": {

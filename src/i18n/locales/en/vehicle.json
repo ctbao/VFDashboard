@@ -71,6 +71,7 @@
   "ready": "Ready",
   "previousVehicle": "Previous Vehicle",
   "nextVehicle": "Next Vehicle",
+  "vehicleImageAlt": "Vehicle Isometric",
   "fan": "Fan",
   "off": "Off",
   "statusNormal": "Normal",

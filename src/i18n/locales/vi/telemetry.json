@@ -13,6 +13,8 @@
   "critical": "Nghiêm trọng",
   "warning": "Cảnh báo",
   "searchPlaceholder": "Tìm theo tên hoặc giá trị...",
+  "refreshSnapshot": "Làm mới dữ liệu telemetry",
+  "exportJson": "Xuất ra JSON",
   "noTelemetryAvailable": "Không có dữ liệu telemetry",
   "updateBadge": "Đang cập nhật...",
 

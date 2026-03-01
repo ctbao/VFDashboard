@@ -44,6 +44,13 @@
   "export": "Xuất",
   "refreshing": "Đang làm mới...",
   "updating": "Đang cập nhật...",
+  "cached": "Bộ đệm",
+  "menu": "Menu",
+  "justNow": "vừa xong",
+  "secondsAgo": "{{count}}s trước",
+  "minutesAgo": "{{count}}p trước",
+  "hoursAgo": "{{count}}h trước",
+  "daysAgo": "{{count}}d trước",
   "currentUser": "Người dùng hiện tại",
   "yourVehicles": "Xe của bạn",
   "roles": {

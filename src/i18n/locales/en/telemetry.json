@@ -13,6 +13,8 @@
   "critical": "Critical",
   "warning": "Warning",
   "searchPlaceholder": "Search by key or value...",
+  "refreshSnapshot": "Refresh telemetry snapshot",
+  "exportJson": "Export to JSON",
   "noTelemetryAvailable": "No telemetry data available",
   "updateBadge": "Updating...",
 
