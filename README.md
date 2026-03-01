@@ -9,32 +9,15 @@
 
 > ### 🇻🇳 Thông tin dành cho người dùng Việt Nam
 >
-> **VFDashboard** ban đầu là công cụ nhỏ phục vụ nhóm anh em chủ xe VF9, không ngờ được lan truyền rộng. Xin chia sẻ một số điểm để anh em yên tâm:
->
-> - **Không chính thức, không liên quan đến VinFast.** Website chỉ sử dụng tài khoản VinFast của bạn để kết nối và lấy dữ liệu — tương tự cách app chính thức hoạt động. Hệ thống VinFast chạy trên AWS, bảo mật tốt.
-> - **Không thu thập, không lưu trữ bất kỳ dữ liệu nào.** Toàn bộ thông tin (bao gồm mật khẩu) chỉ được chuyển tiếp đến server VinFast/Auth0 qua HTTPS và **không bao giờ được ghi lại** trên hệ thống. Mã nguồn hoàn toàn công khai — ai cũng có thể kiểm chứng.
-> - **Thông tin mang tính tham khảo.** Dữ liệu được lấy trực tiếp từ VinFast nhưng không có giá trị chính thức để làm việc với hãng.
-> - **Phi lợi nhuận, không scam, không giả mạo.** Dự án luôn ghi rõ là "unofficial" và không hề mạo danh VinFast. Anh em lo lắng về bảo mật có thể tự clone về máy chạy ở local (`npm install && npm run dev`) và dùng AI để đánh giá code.
-> - **Link duy nhất:** [**dashboard.vf9.club**](https://dashboard.vf9.club) — không có link nào khác. Khuyến khích chạy local để trải nghiệm ổn định nhất.
-> - **Lỗi không kết nối được?** Do server VinFast giới hạn tần suất truy cập (rate limit) từ proxy, không phải do hệ thống quá tải.
->
-> ---
->
-> #### ⚠️ Về việc website bị report "phishing"
->
-> Team VinFast đã report website lên Cloudflare với nội dung **không đúng sự thật**, cụ thể:
->
-> - ❌ *"Mật khẩu được lưu dưới dạng plaintext"* → **Sai.** Hệ thống chỉ chuyển tiếp thông tin đăng nhập đến Auth0 (hệ thống xác thực của chính VinFast) qua HTTPS, **không ghi log, không lưu trữ**. Toàn bộ mã nguồn công khai — ai cũng có thể kiểm tra.
-> - ❌ *"Website giả mạo VinFast"* → **Sai.** Dự án luôn ghi rõ "unofficial", không dùng logo VinFast, không mạo danh, và ghi rõ "not affiliated with VinFast" ngay trên trang này.
-> - ❌ *"Thu thập dữ liệu người dùng trái phép"* → **Sai.** Không có dữ liệu nào được lưu trên server. Mọi thông tin chỉ nằm trên trình duyệt của bạn (HttpOnly cookies), giống hệt cách app chính thức hoạt động.
->
-> Chúng tôi hơi thất vọng vì VinFast chọn cách report thay vì liên hệ trực tiếp. Dự án này xuất phát từ đam mê xe điện và mong muốn bổ sung những tính năng mà app chính thức chưa có — hoàn toàn vì cộng đồng.
->
-> ---
+> - **Vui lòng cảnh giác với website/app giả mạo.** Không đăng nhập tài khoản VinFast trên các website lạ hoặc ứng dụng tải từ nguồn không tin cậy.
+> - **Chỉ sử dụng khi bạn tự đánh giá là tin tưởng và chấp nhận rủi ro.** Đây là dự án cộng đồng, không phải sản phẩm chính thức của VinFast.
+> - **Link website chính thức của dự án:** [**dashboard.vf9.club**](https://dashboard.vf9.club)
+> - **Các bản build desktop/mobile:** xem tại [**GitHub Releases**](https://github.com/VF9-Club/VFDashboard/releases)
+> - **Cam kết minh bạch:** mọi bản build phát hành đều dựa trên source code public trong repository này.
 >
 > Giao lưu cùng tác giả: [**ANH EM VF9 - VF9 CLUB**](https://www.facebook.com/groups/706124277686588/)
 >
-> *📄 English documentation below.*
+> _📄 English documentation below._
 
 ---
 
@@ -114,6 +97,17 @@ npm run deploy
 
 _Note: Requires Cloudflare authentication (`npx wrangler login`)._
 
+### Update Windows build from a Windows machine
+
+```powershell
+npm install
+npm run tauri:build:win
+gh auth login
+gh release upload v1.0.0 .\src-tauri\target\release\bundle\nsis\*.exe .\src-tauri\target\release\bundle\msi\*.msi --clobber
+```
+
+Detailed guide: `docs/TAURI_WINDOWS_BUILD.md`
+
 ## ⚠ Disclaimer
 
 **This software is not affiliated with, endorsed by, or connected to VinFast Auto or its subsidiaries.**
@@ -160,37 +154,6 @@ This project was developed based on inspiration and valuable technical documenta
 Selected improvements from community forks are periodically reviewed and backported into this public branch when they align with security, maintainability, and broad community usage.
 
 We warmly welcome all VinFast owners and technology enthusiasts to collaborate and help improve the public dashboard experience.
-
-## 💬 An Open Letter to VinFast
-
-Dear VinFast Team,
-
-This project was born out of genuine love for VinFast vehicles. We are passionate owners who wanted features the official app doesn't yet provide — real-time battery telemetry, tire pressure history, charging analytics, and a digital twin experience. This is not competition; this is **free R&D from your most loyal customers**.
-
-### On the Recent Takedown Report
-
-We were disappointed to learn that VinFast reported this project with claims that are **factually incorrect**:
-
-- ❌ *"credentials stored in plaintext"* — **False.** The proxy forwards credentials to Auth0 over HTTPS and **never logs or stores them**. The entire codebase is open-source — anyone can verify this. See [Issue #68](https://github.com/VF9-Club/VFDashboard/issues/68) for a detailed technical discussion.
-- ❌ *"fake application impersonating VinFast"* — **False.** The project has always been clearly labeled as **unofficial and community-built**. It does not use VinFast branding, does not claim affiliation, and states "not affiliated with VinFast" prominently in this README.
-- ❌ *"illegally stored user data"* — **False.** No user data is stored on any server. All data flows directly between the user's browser and VinFast's own APIs. Session tokens are stored in the user's browser only (HttpOnly cookies), exactly as the official app does.
-
-We would have welcomed a direct conversation before a takedown report based on inaccurate claims.
-
-### A Better Path Forward
-
-Many car manufacturers (Tesla, BMW, Mercedes, Hyundai/Kia) have recognized that third-party apps **increase customer satisfaction and brand loyalty**. Instead of an adversarial approach, we hope VinFast will consider:
-
-1. **A public API program** (even read-only) with proper OAuth and rate limits
-2. **Developer documentation** for vehicle telemetry endpoints
-3. **Engaging with the community** rather than suppressing it
-
-We built this in the open, with good intentions. We still hope to work **with** VinFast, not around them.
-
-With respect,\
-**The VFDashboard Community**
-
----
 
 ## 📜 License
 
