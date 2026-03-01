@@ -12,10 +12,7 @@ import {
   getGroupByAlias,
   ALIAS_PREFIX_TO_GROUP,
 } from "../config/deepScanGroups";
-import {
-  lookupAliasByDeviceKey,
-  humanizeAlias,
-} from "../utils/aliasLookup";
+import { lookupAliasByDeviceKey, humanizeAlias } from "../utils/aliasLookup";
 import { api } from "../services/api";
 
 // Icon SVG paths — defined once at module level to avoid re-creating on every render.
@@ -24,53 +21,127 @@ const ICON_PATHS = {
   battery: ["M4 8h16v8H4V8zm16 2h2v4h-2V10zM7 11h4v2H7v-2z", "text-green-600"],
   "battery-low": ["M4 8h16v8H4V8zm16 2h2v4h-2V10z", "text-yellow-600"],
   bolt: ["M13 10V3L4 14h7v7l9-11h-7z", "text-blue-600"],
-  car: ["M8 17l4 4 4-4m-4-5v9M3 7l9-4 9 4M3 7l9 4 9-4M3 7v10l9 4 9-4V7", "text-gray-600"],
+  car: [
+    "M8 17l4 4 4-4m-4-5v9M3 7l9-4 9 4M3 7l9 4 9-4M3 7v10l9 4 9-4V7",
+    "text-gray-600",
+  ],
   thermometer: ["M12 9V3m0 18a4 4 0 100-8 4 4 0 000 8zm0-8V9", "text-red-500"],
   seat: ["M5 19h14M7 14l1-5h8l1 5M7 14v5m10-5v5", "text-purple-600"],
-  location: [["M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z", "M15 11a3 3 0 11-6 0 3 3 0 016 0z"], "text-red-600"],
-  warning: ["M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z", "text-amber-500"],
-  route: ["M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7", "text-indigo-600"],
-  cpu: ["M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z", "text-gray-600"],
-  lightbulb: ["M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z", "text-yellow-500"],
-  shield: ["M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z", "text-red-600"],
-  wifi: ["M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0", "text-blue-500"],
+  location: [
+    [
+      "M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z",
+      "M15 11a3 3 0 11-6 0 3 3 0 016 0z",
+    ],
+    "text-red-600",
+  ],
+  warning: [
+    "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z",
+    "text-amber-500",
+  ],
+  route: [
+    "M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7",
+    "text-indigo-600",
+  ],
+  cpu: [
+    "M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z",
+    "text-gray-600",
+  ],
+  lightbulb: [
+    "M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z",
+    "text-yellow-500",
+  ],
+  shield: [
+    "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
+    "text-red-600",
+  ],
+  wifi: [
+    "M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0",
+    "text-blue-500",
+  ],
   search: ["M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z", "text-purple-600"],
-  star: ["M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z", "text-yellow-500", true],
+  star: [
+    "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
+    "text-yellow-500",
+    true,
+  ],
 };
 
 // Special icons with non-path elements (rect/circle/line) — kept as JSX
 const SPECIAL_ICONS = {
   tire: (
-    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg
+      className="w-4 h-4 text-gray-600"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
       <circle cx="12" cy="12" r="9" strokeWidth="2" />
       <circle cx="12" cy="12" r="4" strokeWidth="2" />
     </svg>
   ),
   door: (
-    <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h18v18H3V3zm5 9h2" />
+    <svg
+      className="w-4 h-4 text-orange-600"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M3 3h18v18H3V3zm5 9h2"
+      />
     </svg>
   ),
   window: (
-    <svg className="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg
+      className="w-4 h-4 text-cyan-600"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
       <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="2" />
       <line x1="3" y1="12" x2="21" y2="12" strokeWidth="2" />
       <line x1="12" y1="3" x2="12" y2="21" strokeWidth="2" />
     </svg>
   ),
   microchip: (
-    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg
+      className="w-4 h-4 text-blue-600"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
       <rect x="6" y="6" width="12" height="12" rx="1" strokeWidth="2" />
-      <path strokeLinecap="round" strokeWidth="2" d="M9 1v4m6-4v4M9 19v4m6-4v4M1 9h4m-4 6h4M19 9h4m-4 6h4" />
+      <path
+        strokeLinecap="round"
+        strokeWidth="2"
+        d="M9 1v4m6-4v4M9 19v4m6-4v4M1 9h4m-4 6h4M19 9h4m-4 6h4"
+      />
     </svg>
   ),
   "id-card": (
-    <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 114 0v2m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+    <svg
+      className="w-4 h-4 text-teal-600"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 114 0v2m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"
+      />
     </svg>
   ),
   ellipsis: (
-    <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+    <svg
+      className="w-4 h-4 text-gray-400"
+      fill="currentColor"
+      viewBox="0 0 24 24"
+    >
       <circle cx="5" cy="12" r="2" />
       <circle cx="12" cy="12" r="2" />
       <circle cx="19" cy="12" r="2" />
@@ -87,13 +158,29 @@ const GroupIcon = ({ icon }) => {
   const [paths, colorClass, isFill] = pathDef;
 
   return (
-    <svg className={`w-4 h-4 ${colorClass}`} fill={isFill ? "currentColor" : "none"} stroke={isFill ? "none" : "currentColor"} viewBox="0 0 24 24">
+    <svg
+      className={`w-4 h-4 ${colorClass}`}
+      fill={isFill ? "currentColor" : "none"}
+      stroke={isFill ? "none" : "currentColor"}
+      viewBox="0 0 24 24"
+    >
       {Array.isArray(paths) ? (
         paths.map((d, i) => (
-          <path key={i} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={d} />
+          <path
+            key={i}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d={d}
+          />
         ))
       ) : (
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={paths} />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d={paths}
+        />
       )}
     </svg>
   );
@@ -183,7 +270,8 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
   const storedData = vehicle.fullTelemetryData[vehicle.vin] || [];
   const aliases = vehicle.fullTelemetryAliases[vehicle.vin] || [];
   const timestamp = vehicle.fullTelemetryTimestamps[vehicle.vin];
-  const debugLog = vehicle.debugLogByVin?.[vehicle.vin] || vehicle.debugLog || [];
+  const debugLog =
+    vehicle.debugLogByVin?.[vehicle.vin] || vehicle.debugLog || [];
 
   // Progressive: re-read MQTT snapshot reactively when snapshotVer changes
   const liveSnapshot = React.useMemo(() => {
@@ -193,7 +281,8 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
   }, [isOpen, vehicle.vin, snapshotVer]);
 
   // Use whichever has more data: stored or live
-  const data = liveSnapshot.length > storedData.length ? liveSnapshot : storedData;
+  const data =
+    liveSnapshot.length > storedData.length ? liveSnapshot : storedData;
 
   // Map raw data with alias metadata + reverse lookup from static map
   const mappedData = React.useMemo(() => {
@@ -213,7 +302,8 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
       );
 
       // 2. Reverse lookup from static_alias_map if no API meta
-      const alias = meta?.alias || lookupAliasByDeviceKey(`${oid}_${iid}_${rid}`) || "";
+      const alias =
+        meta?.alias || lookupAliasByDeviceKey(`${oid}_${iid}_${rid}`) || "";
 
       // 3. Build display name: API name > humanized alias
       let improvedName = meta?.name || null;
@@ -458,7 +548,12 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
 
     const snapshot = getLiveMqttSnapshotForVin(vehicle.vin);
     const aliasesWithData = snapshot
-      .filter((item) => item.raw?.value !== null && item.raw?.value !== undefined && item.raw?.value !== "")
+      .filter(
+        (item) =>
+          item.raw?.value !== null &&
+          item.raw?.value !== undefined &&
+          item.raw?.value !== "",
+      )
       .map((item) => {
         const dk = item.raw?.deviceKey || "";
         const parts = dk.split("_");
@@ -470,18 +565,25 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
           instanceId: iid,
           resourceId: rid,
           // Use reverse lookup for alias name (raw MQTT often has empty alias)
-          alias: item.raw?.alias || lookupAliasByDeviceKey(`${oid}_${iid}_${rid}`) || "",
+          alias:
+            item.raw?.alias ||
+            lookupAliasByDeviceKey(`${oid}_${iid}_${rid}`) ||
+            "",
         };
       })
       .filter((a) => a.objectId && a.resourceId && a.objectId !== "NaN");
 
     if (aliasesWithData.length > 0) {
-      const vehicleInfo = vehicle.vehicles?.find((v) => v.vinCode === vehicle.vin);
+      const vehicleInfo = vehicle.vehicles?.find(
+        (v) => v.vinCode === vehicle.vin,
+      );
       const model = vehicleInfo?.marketingName || "unknown";
       const year = vehicleInfo?.yearOfProduct || "unknown";
 
       api.reportKnownAliases(model, year, aliasesWithData, vehicle.vin);
-      console.log(`[Deep Scan] Reported ${aliasesWithData.length} known-good aliases to KV (model=${model}, year=${year})`);
+      console.log(
+        `[Deep Scan] Reported ${aliasesWithData.length} known-good aliases to KV (model=${model}, year=${year})`,
+      );
       return aliasesWithData.length;
     }
     return 0;
@@ -628,7 +730,7 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
             onClick={handleRefreshScan}
             disabled={vehicle.isScanning}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white text-sm font-bold rounded-lg shadow-md transition-all active:scale-95"
-            title="Refresh MQTT telemetry snapshot"
+            title={t("telemetry:refreshSnapshot")}
           >
             <svg
               className={`w-4 h-4 ${vehicle.isScanning ? "animate-spin" : ""}`}
@@ -644,14 +746,16 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
               />
             </svg>
             <span className="hidden sm:inline">
-              {vehicle.isScanning ? t("common:refreshing") : t("common:refresh")}
+              {vehicle.isScanning
+                ? t("common:refreshing")
+                : t("common:refresh")}
             </span>
           </button>
           <button
             onClick={handleExport}
             disabled={filteredData.length === 0}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 disabled:bg-gray-100 text-indigo-600 disabled:text-gray-400 text-sm font-bold rounded-lg border border-indigo-100 transition-all active:scale-95"
-            title="Export to JSON"
+            title={t("telemetry:exportJson")}
           >
             <svg
               className="w-4 h-4"
@@ -688,7 +792,9 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
                 />
               </svg>
               <p className="font-medium">
-                {searchTerm ? t("telemetry:noResultsFound") : t("telemetry:noTelemetryYet")}
+                {searchTerm
+                  ? t("telemetry:noResultsFound")
+                  : t("telemetry:noTelemetryYet")}
               </p>
               <p className="text-xs mt-1">{t("telemetry:mqttWaiting")}</p>
             </div>
@@ -735,7 +841,10 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
                         </h3>
                         {group.description && (
                           <p className="text-[10px] text-gray-400 mt-0.5">
-                            {t(`telemetry:descriptions.${group.id}`, group.description)}
+                            {t(
+                              `telemetry:descriptions.${group.id}`,
+                              group.description,
+                            )}
                           </p>
                         )}
                       </div>
@@ -854,9 +963,13 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-blue-50 text-[10px] text-gray-500 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
-            <span className="font-bold">{filteredData.length} {t("telemetry:parameters")}</span>
+            <span className="font-bold">
+              {filteredData.length} {t("telemetry:parameters")}
+            </span>
             <span className="text-gray-300">|</span>
-            <span>{groupedData.length} {t("telemetry:categories")}</span>
+            <span>
+              {groupedData.length} {t("telemetry:categories")}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1">

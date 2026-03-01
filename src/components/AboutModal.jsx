@@ -53,7 +53,9 @@ export default function AboutModal({ isOpen, onClose }) {
             </p>
 
             <div className="bg-gray-50 rounded-2xl p-4 space-y-2 border border-gray-100">
-              <h3 className="font-bold text-gray-900 text-sm">{t("mainGoals")}</h3>
+              <h3 className="font-bold text-gray-900 text-sm">
+                {t("mainGoals")}
+              </h3>
               <ul className="text-sm text-gray-600 space-y-1 list-disc pl-4">
                 <li>{t("goals.visualizeHidden")}</li>
                 <li>{t("goals.clearMonitoring")}</li>
@@ -129,7 +131,7 @@ export default function AboutModal({ isOpen, onClose }) {
                 <div className="rounded-xl overflow-hidden shadow-md border border-gray-100 relative group max-w-[220px]">
                   <img
                     src="/mobile-vf9-energy.webp"
-                    alt="Dashboard Preview"
+                    alt={t("about:dashboardPreview")}
                     className="w-full h-auto transform group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3">

@@ -1,13 +1,10 @@
 import "../i18n";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useStore } from "@nanostores/react";
-import { currentLanguage, setLanguage } from "../stores/languageStore";
 import { api } from "../services/api";
 
 export default function Login({ bgImage }) {
   const { t, i18n } = useTranslation(["login", "common"]);
-  const lang = useStore(currentLanguage);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [region, setRegion] = useState("vn"); // Default to Vietnam
@@ -18,7 +15,6 @@ export default function Login({ bgImage }) {
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
 
   const handleLangChange = (newLang) => {
-    setLanguage(newLang);
     i18n.changeLanguage(newLang);
     setLangDropdownOpen(false);
   };
@@ -173,7 +169,7 @@ export default function Login({ bgImage }) {
                     onClick={() => setLangDropdownOpen(!langDropdownOpen)}
                     className="flex items-center gap-1 bg-transparent text-gray-900 text-xs font-bold focus:outline-none"
                   >
-                    {lang === "vi" ? "🇻🇳 Tiếng Việt" : "🇺🇸 English"}
+                    {i18n.language === "vi" ? "🇻🇳 Tiếng Việt" : "🇺🇸 English"}
                     <svg
                       className={`w-3 h-3 text-gray-400 transition-transform duration-200 ${langDropdownOpen ? "rotate-180" : ""}`}
                       fill="none"
@@ -195,7 +191,7 @@ export default function Login({ bgImage }) {
                             key={opt.val}
                             type="button"
                             onClick={() => handleLangChange(opt.val)}
-                            className={`w-full text-left px-3 py-2 rounded-lg text-sm font-bold transition-colors ${lang === opt.val ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}`}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm font-bold transition-colors ${i18n.language === opt.val ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}`}
                           >
                             {opt.label}
                           </button>
@@ -315,20 +311,19 @@ export default function Login({ bgImage }) {
 
         {/* About / Community */}
         <p className="relative text-center text-[11px] leading-relaxed text-white/70 px-2">
-          Dự án mã nguồn mở, phi lợi nhuận — chia sẻ đam mê công nghệ xe điện VinFast.
-          {" "}Trao đổi về dự án tại{" "}
+          {t("login:communityDescription")}
+          {" "}{t("login:communityDiscussion")}{" "}
           <a
             href="https://www.facebook.com/groups/706124277686588/"
             target="_blank"
             rel="noopener noreferrer"
             className="font-semibold text-white hover:text-blue-300 underline underline-offset-2 transition-colors"
-          >ANH EM VF9 - VF9 CLUB</a>.
+          >{t("login:communityGroup")}</a>.
         </p>
 
         {/* Trademark Disclaimer */}
         <p className="relative text-center text-[10px] leading-relaxed text-white/40 px-4">
-          Not affiliated with, endorsed, or sponsored by VinFast.
-          VinFast is a registered trademark of VinFast Commercial and Services Trading LLC.
+          {t("login:disclaimer")}
         </p>
 
         {/* Footer: Github - Text - VF9 Club */}
@@ -339,7 +334,7 @@ export default function Login({ bgImage }) {
             target="_blank"
             rel="noopener noreferrer"
             className="text-gray-400 hover:text-gray-900 transition-colors duration-300"
-            title="View Source on GitHub"
+            title={t("login:viewSource")}
           >
             <svg
               className="h-8 w-8"
@@ -357,8 +352,7 @@ export default function Login({ bgImage }) {
 
           {/* Center: Text */}
           <p className="text-gray-500 text-xs font-bold uppercase tracking-wider text-center">
-            Made with <span className="text-red-500 text-sm">❤️</span> in
-            Vietnam
+            {t("login:madeWith")} <span className="text-red-500 text-sm">❤️</span> {t("login:madeIn")}
           </p>
 
           {/* Right: VF9 Club */}

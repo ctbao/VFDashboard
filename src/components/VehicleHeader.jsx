@@ -8,7 +8,6 @@ import {
 } from "../stores/vehicleStore";
 import { api } from "../services/api";
 import { mqttStore } from "../stores/mqttStore";
-import { currentLanguage, setLanguage } from "../stores/languageStore";
 import AboutModal from "./AboutModal";
 
 // Generate a local SVG avatar to avoid third-party avatar requests.
@@ -152,21 +151,15 @@ const WeatherIcon = ({ temp, code }) => {
 export default function VehicleHeader({ onOpenCharging, onOpenTelemetry }) {
   const vehicle = useStore(vehicleStore);
   const mqtt = useStore(mqttStore);
-  const lang = useStore(currentLanguage);
-  const { t, i18n } = useTranslation(["common", "dashboard", "vehicle"]);
+  const { t, i18n } = useTranslation(["common", "dashboard"]);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [toolsOpen, setToolsOpen] = React.useState(false);
   const [showAbout, setShowAbout] = React.useState(false);
   const [langOpen, setLangOpen] = React.useState(false);
 
   const handleLangChange = (newLang) => {
-    setLanguage(newLang);
     i18n.changeLanguage(newLang);
     setLangOpen(false);
-  };
-
-  const handleRefresh = () => {
-    refreshVehicle(vehicle.vin);
   };
 
   const handleLogout = async () => {
@@ -189,21 +182,39 @@ export default function VehicleHeader({ onOpenCharging, onOpenTelemetry }) {
     window.location.href = "/login";
   };
 
-  // Format Last Updated (Client-Side Only to avoid hydration mismatch)
+  // Format Last Updated as relative time ("just now", "2m ago", "1h ago")
+  const formatRelativeTime = React.useCallback((timestamp) => {
+    if (!timestamp) return "N/A";
+    const diff = Math.max(0, Date.now() - timestamp);
+    const seconds = Math.floor(diff / 1000);
+    if (seconds < 30) return t("common:justNow");
+    if (seconds < 60) return t("common:secondsAgo", { count: seconds });
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return t("common:minutesAgo", { count: minutes });
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return t("common:hoursAgo", { count: hours });
+    const days = Math.floor(hours / 24);
+    return t("common:daysAgo", { count: days });
+  }, [t]);
+
   const [lastUpdatedTime, setLastUpdatedTime] = React.useState("--:--");
 
+  // Use key-data timestamp as the authoritative "last updated" reference
+  const odoTimestamp = vehicle.odoLastReceived || null;
+  const dataSource = vehicle.dataSource || "none";
+  const isCached = dataSource === "cache";
+
   React.useEffect(() => {
-    if (vehicle.lastUpdated) {
-      setLastUpdatedTime(
-        new Date(vehicle.lastUpdated).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      );
-    } else {
-      setLastUpdatedTime("N/A");
-    }
-  }, [vehicle.lastUpdated]);
+    // Update immediately
+    setLastUpdatedTime(formatRelativeTime(odoTimestamp));
+
+    // Tick every 30s to keep the relative time fresh
+    const interval = setInterval(() => {
+      setLastUpdatedTime(formatRelativeTime(odoTimestamp));
+    }, 30_000);
+
+    return () => clearInterval(interval);
+  }, [odoTimestamp, formatRelativeTime]);
 
   return (
     <div className="relative z-50 flex items-center justify-between py-2 mb-2 gap-2 md:gap-4 pr-1">
@@ -251,37 +262,62 @@ export default function VehicleHeader({ onOpenCharging, onOpenTelemetry }) {
           />
         </div>
 
-        {/* Last Updated & Refresh Group */}
+        {/* Last Updated Status (Display-Only) */}
         <button
-          onClick={handleRefresh}
-          disabled={vehicle.isRefreshing}
-          title="Refresh Data"
-          className="flex items-center gap-2 bg-white px-2 pr-3 h-9 rounded-full border border-gray-200 shadow-sm ml-1 hover:border-indigo-200 hover:text-indigo-600 transition-all-custom tap-active text-gray-500 cursor-pointer"
+          onClick={() => {
+            if (!vehicle.vin || vehicle.isRefreshing) return;
+            refreshVehicle(vehicle.vin);
+          }}
+          disabled={!vehicle.vin || vehicle.isRefreshing}
+          title={
+            vehicle.isRefreshing
+              ? "Refreshing..."
+              : isCached
+                ? `Cached data from ${odoTimestamp ? new Date(odoTimestamp).toLocaleString() : "previous session"} — tap to refresh`
+                : odoTimestamp ? `Live data updated: ${new Date(odoTimestamp).toLocaleString()} — tap to refresh` : "Waiting for data..."
+          }
+          className={`flex items-center gap-2 px-2 pr-3 h-9 rounded-full border shadow-sm ml-1 select-none transition-all duration-300 cursor-pointer group ${
+            vehicle.isRefreshing
+              ? "bg-blue-50 border-blue-200 text-blue-500 cursor-wait"
+              : isCached
+                ? "bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100 hover:border-amber-300 active:scale-95"
+                : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-gray-300 active:scale-95"
+          } disabled:cursor-not-allowed disabled:opacity-50`}
         >
-          {/* Refresh Icon */}
+          {/* Clock / Cache / Refresh Icon */}
           <div className="p-1.5 rounded-full">
-            <svg
-              className={`w-4 h-4 ${vehicle.isRefreshing ? "animate-spin text-indigo-600" : ""}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2.5"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              ></path>
-            </svg>
+            {vehicle.isRefreshing ? (
+              <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            ) : isCached ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5"
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            )}
           </div>
 
           {/* Time Display (Right) */}
           <div className="hidden md:flex flex-col items-start leading-none">
-            <span className="text-[8px] opacity-70 uppercase font-bold tracking-wider mb-0.5">
-              Updated
+            <span className={`text-[8px] uppercase font-bold tracking-wider mb-0.5 ${
+              vehicle.isRefreshing ? "text-blue-400" : isCached ? "text-amber-500" : "opacity-70"
+            }`}>
+              {vehicle.isRefreshing ? t("dashboard:refreshing", "Refreshing") : isCached ? t("common:cached") : t("dashboard:updated")}
             </span>
-            <span className="text-xs font-mono font-bold tabular-nums leading-none">
-              {lastUpdatedTime}
+            <span className={`text-xs font-mono font-bold tabular-nums leading-none ${
+              vehicle.isRefreshing ? "text-blue-500" : isCached ? "text-amber-600" : ""
+            }`}>
+              {vehicle.isRefreshing ? "..." : lastUpdatedTime}
             </span>
           </div>
 
@@ -290,29 +326,29 @@ export default function VehicleHeader({ onOpenCharging, onOpenTelemetry }) {
             {mqtt.status === "connected" ? (
               <>
                 <span className="text-[8px] text-green-600 uppercase font-bold tracking-wider mb-0.5">
-                  Live
+                  {t("common:live")}
                 </span>
                 <span className="text-xs font-mono font-bold text-green-600 tabular-nums leading-none flex items-center gap-1">
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                  MQTT
+                  {t("dashboard:mqttLabel")}
                 </span>
               </>
             ) : mqtt.status === "connecting" ? (
               <>
                 <span className="text-[8px] text-amber-500 uppercase font-bold tracking-wider mb-0.5">
-                  Connecting
+                  {t("common:connecting")}
                 </span>
                 <span className="text-xs font-mono font-bold text-amber-500 tabular-nums leading-none">
-                  MQTT...
+                  {t("dashboard:mqttConnecting")}
                 </span>
               </>
             ) : (
               <>
                 <span className="text-[8px] text-red-400 uppercase font-bold tracking-wider mb-0.5">
-                  Offline
+                  {t("common:offline")}
                 </span>
                 <span className="text-xs font-mono font-bold text-red-400 tabular-nums leading-none">
-                  Disconnected
+                  {t("dashboard:mqttDisconnected")}
                 </span>
               </>
             )}
@@ -456,7 +492,7 @@ export default function VehicleHeader({ onOpenCharging, onOpenTelemetry }) {
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="group flex items-center justify-center h-10 w-10 cursor-pointer focus:outline-none"
-              title="Menu"
+              title={t("common:menu")}
             >
               <img
                 src={
@@ -611,7 +647,7 @@ export default function VehicleHeader({ onOpenCharging, onOpenTelemetry }) {
                       <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
                       </svg>
-                      {lang === "vi" ? "🇻🇳 Tiếng Việt" : "🇺🇸 English"}
+                    {i18n.language === "vi" ? "🇻🇳 Tiếng Việt" : "🇺🇸 English"}
                       <svg className={`w-3 h-3 ml-auto text-gray-400 transition-transform ${langOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
                       </svg>

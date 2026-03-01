@@ -121,11 +121,13 @@ export function EnvironmentCard() {
         <WeatherRow
           label={t("cabin")}
           value={
-            v.inside_temp !== undefined && v.inside_temp !== null
-              ? `${v.inside_temp}°C`
-              : isWaiting
-                ? <span className="animate-pulse text-gray-300">--°C</span>
-                : "N/A"
+            v.inside_temp !== undefined && v.inside_temp !== null ? (
+              `${v.inside_temp}°C`
+            ) : isWaiting ? (
+              <span className="animate-pulse text-gray-300">--°C</span>
+            ) : (
+              "N/A"
+            )
           }
           subValue={`${t("common:fan")}: ${v.fan_speed !== undefined && v.fan_speed !== null ? v.fan_speed : isWaiting ? "..." : "N/A"}`}
           icon={
@@ -148,7 +150,9 @@ export function EnvironmentCard() {
 
       <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-100">
         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100">
-          <span className="text-xs font-bold text-gray-500">{t("petMode")}</span>
+          <span className="text-xs font-bold text-gray-500">
+            {t("petMode")}
+          </span>
           <span
             className={`text-[10px] font-bold px-2 py-1 rounded-lg ${Number(v.pet_mode) === 1 ? "bg-blue-600 text-white shadow-md shadow-blue-200" : "bg-gray-200 text-gray-500"}`}
           >
@@ -156,7 +160,9 @@ export function EnvironmentCard() {
           </span>
         </div>
         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100">
-          <span className="text-xs font-bold text-gray-500">{t("campMode")}</span>
+          <span className="text-xs font-bold text-gray-500">
+            {t("campMode")}
+          </span>
           <span
             className={`text-[10px] font-bold px-2 py-1 rounded-lg ${Number(v.camp_mode) === 1 ? "bg-blue-600 text-white shadow-md shadow-blue-200" : "bg-gray-200 text-gray-500"}`}
           >
@@ -171,7 +177,7 @@ export function EnvironmentCard() {
 export function MapCard() {
   const v = useStore(vehicleStore);
   const mqtt = useStore(mqttStore);
-  const { t } = useTranslation("common");
+  const { t } = useTranslation(["common", "dashboard"]);
   const isWaiting = mqtt.status === "connected" || mqtt.status === "connecting";
   const isDefaultLoc =
     Number(v.latitude) === DEFAULT_LOCATION.LATITUDE &&
@@ -232,7 +238,7 @@ export function MapCard() {
               target="_blank"
               rel="noopener noreferrer"
               className="text-[10px] font-bold text-gray-500 uppercase tracking-wide truncate flex items-center gap-1 hover:text-blue-600 transition-all group"
-              title={v.location_address || "Open in Google Maps"}
+              title={v.location_address || t("dashboard:openInGoogleMaps")}
             >
               <span className="truncate">
                 {v.location_address || t("locating")}
@@ -272,7 +278,7 @@ export function MapCard() {
             scrolling="no"
             marginHeight="0"
             marginWidth="0"
-            title="Vehicle Location"
+            title={t("common:vehicleLocation")}
             src={`https://maps.google.com/maps?q=${v.latitude},${v.longitude}&z=15&output=embed&iwloc=`}
             className="absolute w-[150%] h-[150%] top-[-25%] left-[-25%] filter grayscale contrast-[1.1] opacity-90 mix-blend-multiply transition-opacity duration-500"
             style={{ pointerEvents: "auto" }}
@@ -286,9 +292,24 @@ export function MapCard() {
           </div>
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 bg-gray-50">
-            <svg className="w-10 h-10 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            <svg
+              className="w-10 h-10 text-gray-300 mb-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.5"
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.5"
+                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              />
             </svg>
             <span className="text-xs font-bold uppercase tracking-wider text-gray-300">
               {t("offline")}

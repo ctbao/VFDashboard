@@ -1,4 +1,7 @@
+import { useTranslation } from "react-i18next";
+
 export default function ChargingStationPopup({ station }) {
+  const { t } = useTranslation("dashboard");
   const available = station.availableConnectors ?? 0;
   const total = station.totalConnectors ?? 0;
   const connectors = station.connectorTypes || [];
@@ -7,7 +10,7 @@ export default function ChargingStationPopup({ station }) {
   return (
     <div className="min-w-[200px] max-w-[260px]">
       <div className="font-bold text-gray-900 text-sm leading-tight mb-1">
-        {station.stationName || "Charging Station"}
+        {station.stationName || t("dashboard:chargingStation")}
       </div>
 
       {station.address && (
@@ -20,7 +23,7 @@ export default function ChargingStationPopup({ station }) {
         <span
           className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${isAvailable ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}
         >
-          {available}/{total} Available
+          {available}/{total} {t("dashboard:available")}
         </span>
         {station.maxPower > 0 && (
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700">
@@ -45,8 +48,10 @@ export default function ChargingStationPopup({ station }) {
       {station.distance != null && (
         <div className="text-[10px] text-gray-400 font-medium">
           {station.distance < 1
-            ? `${Math.round(station.distance * 1000)}m away`
-            : `${station.distance.toFixed(1)} km away`}
+            ? t("dashboard:metersAway", {
+                count: Math.round(station.distance * 1000),
+              })
+            : t("dashboard:kmAway", { count: station.distance.toFixed(1) })}
         </div>
       )}
 
@@ -75,7 +80,7 @@ export default function ChargingStationPopup({ station }) {
             d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
           />
         </svg>
-        Navigate
+        {t("dashboard:navigate")}
       </a>
     </div>
   );

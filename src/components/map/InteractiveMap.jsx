@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useStore } from "@nanostores/react";
+import { useTranslation } from "react-i18next";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -78,6 +79,7 @@ function MapUpdater({ center, zoom }) {
 }
 
 export default function InteractiveMap() {
+  const { t } = useTranslation("common");
   const vehicle = useStore(vehicleStore);
   const stationState = useStore(chargingStationStore);
   const mapRef = useRef(null);
@@ -138,7 +140,7 @@ export default function InteractiveMap() {
                 {vehicle.model || "VinFast"} {vehicle.trim || ""}
               </div>
               <div className="text-xs text-gray-500">
-                {vehicle.location_address || "Vehicle location"}
+                {vehicle.location_address || t("common:vehicleLocation")}
               </div>
               {vehicle.battery_level != null && (
                 <div className="text-xs text-blue-600 font-bold mt-1">
@@ -171,7 +173,7 @@ export default function InteractiveMap() {
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50/80 backdrop-blur-sm z-[999]">
           <div className="w-10 h-10 rounded-full border-4 border-gray-200 border-t-blue-500 animate-spin mb-3"></div>
           <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
-            Locating vehicle...
+            {t("common:locating")}
           </span>
         </div>
       )}

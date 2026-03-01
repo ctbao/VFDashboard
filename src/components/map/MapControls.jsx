@@ -1,4 +1,5 @@
 import { useStore } from "@nanostores/react";
+import { useTranslation } from "react-i18next";
 import {
   chargingStationStore,
   toggleStations,
@@ -7,6 +8,7 @@ import {
 } from "../../stores/chargingStationStore";
 
 export default function MapControls({ onRecenter }) {
+  const { t } = useTranslation(["dashboard", "common"]);
   const { showStations, filterConnectorType, filterOnlyAvailable, isLoading } =
     useStore(chargingStationStore);
 
@@ -21,7 +23,9 @@ export default function MapControls({ onRecenter }) {
             : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
         }`}
         title={
-          showStations ? "Hide charging stations" : "Show charging stations"
+          showStations
+            ? t("dashboard:hideStations")
+            : t("dashboard:showStations")
         }
       >
         <svg
@@ -37,7 +41,7 @@ export default function MapControls({ onRecenter }) {
             d="M13 10V3L4 14h7v7l9-11h-7z"
           />
         </svg>
-        {isLoading ? "Loading..." : "Stations"}
+        {isLoading ? t("common:loading") : t("dashboard:stations")}
       </button>
 
       {/* Filters - only show when stations are enabled */}
@@ -49,7 +53,7 @@ export default function MapControls({ onRecenter }) {
             onChange={(e) => setConnectorFilter(e.target.value)}
             className="text-[10px] font-bold text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 outline-none focus:ring-1 focus:ring-blue-400"
           >
-            <option value="">All Types</option>
+            <option value="">{t("dashboard:allTypes")}</option>
             <option value="CCS2">CCS2</option>
             <option value="CHAdeMO">CHAdeMO</option>
             <option value="Type 2">Type 2</option>
@@ -64,7 +68,7 @@ export default function MapControls({ onRecenter }) {
               className="w-3.5 h-3.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
             />
             <span className="text-[10px] font-bold text-gray-600">
-              Available only
+              {t("dashboard:availableOnly")}
             </span>
           </label>
         </div>
@@ -74,7 +78,7 @@ export default function MapControls({ onRecenter }) {
       <button
         onClick={onRecenter}
         className="flex items-center justify-center w-9 h-9 bg-white rounded-xl shadow-md border border-gray-200 hover:bg-gray-50 transition-all active:scale-95 self-end"
-        title="Center on vehicle"
+        title={t("dashboard:centerOnVehicle")}
       >
         <svg
           className="w-4 h-4 text-blue-600"

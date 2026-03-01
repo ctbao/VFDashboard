@@ -84,7 +84,9 @@ function formatEnergy(value, decimals = 1) {
       maximumFractionDigits: decimals,
     }).format(n);
   } catch {
-    return decimals === 0 ? Math.round(n).toLocaleString() : n.toFixed(decimals);
+    return decimals === 0
+      ? Math.round(n).toLocaleString()
+      : n.toFixed(decimals);
   }
 }
 
@@ -180,7 +182,7 @@ function SessionCard({ session, maxEnergy, index }) {
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0 flex-1">
           <h4 className="text-sm font-bold text-gray-900 truncate">
-            {session.chargingStationName || t("unknownStation")}
+            {session.chargingStationName || t("chargingStation")}
           </h4>
           <p className="text-[10px] text-gray-400 truncate mt-0.5">
             {session.district || ""}
@@ -266,7 +268,9 @@ function SessionCard({ session, maxEnergy, index }) {
           <p className="text-[10px] text-gray-400">
             {formatCurrency(chargeFee.price)}/kWh
             {hasPromo && chargingCost <= 0 && (
-              <span className="ml-1 text-green-500 font-bold">{t("freeCharge")}</span>
+              <span className="ml-1 text-green-500 font-bold">
+                {t("freeCharge")}
+              </span>
             )}
           </p>
         )}
@@ -289,8 +293,8 @@ function SessionCard({ session, maxEnergy, index }) {
             />
           </svg>
           <span className="text-[10px] font-bold text-orange-700">
-              {t("idleFeeLbl")}: {formatCurrency(idleFee.cost)}
-            </span>
+            {t("idleFeeLbl")}: {formatCurrency(idleFee.cost)}
+          </span>
           {idleFee.minutes > 0 && (
             <span className="text-[10px] text-orange-500">
               ({idleFee.minutes}m)

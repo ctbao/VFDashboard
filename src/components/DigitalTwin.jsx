@@ -342,7 +342,7 @@ export default function DigitalTwin() {
                     switchVehicle(allVehicles[prevIdx].vinCode);
                   }}
                   className="p-2.5 md:p-3 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg text-gray-400 hover:text-blue-600 hover:bg-white hover:scale-110 active:scale-90 transition-all"
-                  title="Previous Vehicle"
+                  title={t("vehicle:previousVehicle")}
                 >
                   <svg
                     className="w-5 h-5 md:w-6 md:h-6"
@@ -373,7 +373,7 @@ export default function DigitalTwin() {
                     switchVehicle(allVehicles[nextIdx].vinCode);
                   }}
                   className="p-2.5 md:p-3 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg text-gray-400 hover:text-blue-600 hover:bg-white hover:scale-110 active:scale-90 transition-all"
-                  title="Next Vehicle"
+                  title={t("vehicle:nextVehicle")}
                 >
                   <svg
                     className="w-5 h-5 md:w-6 md:h-6"
@@ -403,7 +403,9 @@ export default function DigitalTwin() {
                         : "w-2 h-2 bg-gray-300 hover:bg-gray-500"
                     }`}
                     title={
-                      v.customizedVehicleName || v.vehicleName || "Vehicle"
+                      v.customizedVehicleName ||
+                      v.vehicleName ||
+                      t("common:vehicle")
                     }
                   />
                 ))}
@@ -420,7 +422,7 @@ export default function DigitalTwin() {
             <img
               ref={imgRef}
               src={carImageSrc}
-              alt="Vehicle Isometric"
+              alt={t("vehicle:vehicleImageAlt")}
               draggable={false}
               className={`w-full h-full object-contain drop-shadow-2xl z-10 scale-105 ${getImageAnimClass()} ${dragOffset !== 0 ? "" : "transition-all duration-500"} ${imageLoaded ? "opacity-100" : "opacity-0"}`}
               style={
@@ -517,7 +519,12 @@ export default function DigitalTwin() {
           {(() => {
             const g = data.gear_position;
             const isParked =
-              g === "P" || g === 1 || g === 128 || g === 0 || g === null || g === undefined;
+              g === "P" ||
+              g === 1 ||
+              g === 128 ||
+              g === 0 ||
+              g === null ||
+              g === undefined;
             if (isParked) return null;
 
             const speed =

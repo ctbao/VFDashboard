@@ -111,7 +111,7 @@ export default function MobileNav({ activeTab, onTabChange, onScan }) {
       <button
         onClick={onScan}
         className="w-16 h-16 flex items-center justify-center bg-white/40 backdrop-blur-3xl border border-white/50 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.12)] active:scale-90 active:bg-blue-100/50 transition-all duration-300 group"
-        title="Deep Scan"
+        title={t("common:deepScan")}
       >
         <svg
           className="w-8 h-8 text-indigo-600 group-hover:text-indigo-800 transition-colors"
