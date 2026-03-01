@@ -42,7 +42,7 @@ export default function DashboardApp({ vin: initialVin }) {
       {!isInitialized || !vin ? (
         <AuthGate />
       ) : (
-        <div className="fixed inset-0 w-full h-[100dvh] z-0 md:static md:min-h-[100dvh] md:h-auto md:max-w-7xl md:min-w-[1280px] md:mx-auto p-4 md:pt-2 pb-28 md:pb-2 animate-in fade-in duration-700 flex flex-col md:grid md:grid-rows-[auto_1fr] md:gap-2 overflow-hidden md:overflow-visible">
+        <div className="fixed inset-0 w-full h-[100dvh] z-0 md:static md:min-h-[100dvh] md:h-auto md:max-w-7xl md:min-w-[1280px] md:mx-auto px-4 pt-safe-top md:pt-2 pb-28 md:pb-2 animate-in fade-in duration-700 flex flex-col md:grid md:grid-rows-[auto_1fr] md:gap-2 overflow-hidden md:overflow-visible md:p-4">
           <header className="flex-shrink-0 relative z-[60]">
             <VehicleHeader
               onOpenCharging={handleOpenCharging}

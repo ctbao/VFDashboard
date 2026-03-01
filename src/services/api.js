@@ -1,3 +1,6 @@
+// Install Tauri fetch interceptor (no-op in browser, intercepts /api/* in desktop app)
+import "../utils/tauriFetch.js";
+
 import { REGIONS, DEFAULT_REGION } from "../config/vinfast";
 
 const SESSION_KEY = "vf_session";
@@ -342,12 +345,13 @@ class VinFastAPI {
     this._logProxyRoute(url, response);
 
     if (response.status === 401) {
-      console.warn("Received 401. Trying to refresh token...");
+      console.warn(`[_fetchWithRetry] 401 on ${url}. Trying refresh...`);
       const refreshed = await this.refreshAccessToken();
       if (refreshed) {
         response = await fetch(url, options);
         this._logProxyRoute(url, response);
       } else {
+        console.error(`[_fetchWithRetry] Refresh failed for ${url}. Redirecting.`);
         this.clearSession();
         window.location.href = "/login";
         throw new Error("Session expired");

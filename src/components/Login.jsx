@@ -45,7 +45,7 @@ export default function Login({ bgImage }) {
 
   return (
     <div
-      className="flex h-full md:min-h-screen w-full flex-col items-center justify-center bg-cover bg-center relative px-4"
+      className="flex h-full md:min-h-screen w-full flex-col items-center justify-center bg-cover bg-center relative px-4 pt-safe-top md:pt-0"
       style={{ backgroundImage: `url('${bgImage || "/vf9-interior.png"}')` }}
     >
       {/* Overlay for Blur and Darkening */}
@@ -114,17 +114,40 @@ export default function Login({ bgImage }) {
                 onClick={() => setLangDropdownOpen(!langDropdownOpen)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-gray-700 bg-gray-100 border border-gray-200 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors shadow-sm"
               >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                  />
                 </svg>
                 {i18n.language === "vi" ? "VI" : "EN"}
-                <svg className={`w-2.5 h-2.5 text-gray-500 transition-transform duration-200 ${langDropdownOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                <svg
+                  className={`w-2.5 h-2.5 text-gray-500 transition-transform duration-200 ${langDropdownOpen ? "rotate-180" : ""}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2.5"
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
               {langDropdownOpen && (
                 <>
-                  <div className="fixed inset-0 z-10" onClick={() => setLangDropdownOpen(false)}></div>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setLangDropdownOpen(false)}
+                  ></div>
                   <div className="absolute top-full right-0 mt-1 w-36 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 p-1 z-20 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
                     {[
                       { val: "vi", label: "🇻🇳 Tiếng Việt" },
@@ -305,14 +328,16 @@ export default function Login({ bgImage }) {
 
         {/* About / Community */}
         <p className="relative text-center text-[11px] leading-relaxed text-white/70 px-2">
-          {t("login:communityDescription")}
-          {" "}{t("login:communityDiscussion")}{" "}
+          {t("login:communityDescription")} {t("login:communityDiscussion")}{" "}
           <a
             href="https://www.facebook.com/groups/706124277686588/"
             target="_blank"
             rel="noopener noreferrer"
             className="font-semibold text-white hover:text-blue-300 underline underline-offset-2 transition-colors"
-          >{t("login:communityGroup")}</a>.
+          >
+            {t("login:communityGroup")}
+          </a>
+          .
         </p>
 
         {/* Trademark Disclaimer */}
@@ -346,7 +371,8 @@ export default function Login({ bgImage }) {
 
           {/* Center: Text */}
           <p className="text-gray-500 text-xs font-bold uppercase tracking-wider text-center">
-            {t("login:madeWith")} <span className="text-red-500 text-sm">❤️</span> {t("login:madeIn")}
+            {t("login:madeWith")}{" "}
+            <span className="text-red-500 text-sm">❤️</span> {t("login:madeIn")}
           </p>
 
           {/* Right: VF9 Club */}

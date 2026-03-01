@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 @layer utilities {
+  .pt-safe-top {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+  }
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom, 20px);
   }
@@ -147,8 +150,12 @@
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .animate-shimmer {
@@ -163,8 +170,14 @@
 }
 
 @keyframes blurIn {
-  from { filter: blur(4px); opacity: 0; }
-  to { filter: blur(0); opacity: 1; }
+  from {
+    filter: blur(4px);
+    opacity: 0;
+  }
+  to {
+    filter: blur(0);
+    opacity: 1;
+  }
 }
 
 .animate-blur-in {
@@ -172,8 +185,13 @@
 }
 
 @keyframes glow {
-  0%, 100% { box-shadow: 0 0 5px rgba(37, 99, 235, 0.2); }
-  50% { box-shadow: 0 0 15px rgba(37, 99, 235, 0.5); }
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(37, 99, 235, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(37, 99, 235, 0.5);
+  }
 }
 
 .animate-glow {

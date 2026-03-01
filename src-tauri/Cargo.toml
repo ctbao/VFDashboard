@@ -1,0 +1,24 @@
+[package]
+name = "vfdashboard"
+version = "1.0.0"
+description = "VinFast Dashboard — Real-time EV Telemetry Desktop App"
+authors = ["VF9 Club Vietnam"]
+edition = "2021"
+
+[lib]
+name = "vfdashboard_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-http = { version = "2", features = ["unsafe-headers"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[features]
+# Required for production builds when frontendDist points to filesystem
+# DO NOT REMOVE!!
+prod = ["tauri/custom-protocol"]

@@ -207,7 +207,6 @@ export default function DashboardController({ vin: initialVin }) {
       // Sequential: fetchVehicles handles 401 → token refresh.
       // fetchUser runs after so it uses the refreshed token.
       if (!targetVin) {
-        // fetchVehicles calls switchVehicle → switchVin → connect (MQTT starts here)
         targetVin = await fetchVehicles();
         if (!isMounted.current) return;
       }
@@ -223,11 +222,8 @@ export default function DashboardController({ vin: initialVin }) {
 
       // If still no VIN or failed to fetch, redirect to login
       if (!targetVin && isMounted.current) {
-        console.warn(
-          "No vehicle found or init failed. Clearing session and redirecting.",
-        );
         api.clearSession();
-        window.location.href = "/login";
+        window.location.href = '/login';
         return;
       }
 
