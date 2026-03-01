@@ -1,0 +1,37 @@
+{
+  "title": "VinFast Dashboard",
+  "openSourceBy": "Mã nguồn mở bởi",
+  "club": "VF9 Club Vietnam",
+  "version": "v1.0.0",
+  "versionStable": "v1.0.0 (Ổn định)",
+  "viewSourceGitHub": "Xem mã nguồn trên GitHub",
+  "madeWithLove": "Làm với ❤️ tại Việt Nam",
+  "disclaimer": "Tuyên bố miễn trừ: Phần mềm này không liên kết, không được chứng thực hoặc kết nối với VinFast Auto hoặc các công ty con của họ. Được cung cấp \"nguyên trạng\" chỉ dành cho mục đích học tập và cá nhân.",
+  "tagline": "Công cụ dành cho người đam mê, bởi người đam mê.",
+  "notAffiliated": "Không liên kết với VinFast Auto.",
+  "visualizingHiddenData": "Trực quan hóa dữ liệu ẩn",
+
+  "mobileDescription": "Một dự án cộng đồng được phát triển để cung cấp thông tin chuyên sâu hơn về dữ liệu xe của bạn. Chúng tôi trực quan hóa dữ liệu telemetry thô từ máy chủ VinFast để hiển thị các chi tiết thường bị thiếu trong ứng dụng chính thức.",
+
+  "mainGoals": "Mục tiêu chính",
+  "goals": {
+    "visualizeHidden": "Trực quan hóa dữ liệu ẩn (SOH, phiên bản ECU)",
+    "clearMonitoring": "Theo dõi trạng thái rõ ràng, trực quan",
+    "communityDriven": "Cộng đồng phát triển & Phi thương mại"
+  },
+
+  "desktopIntro1": "VinFast Dashboard là dự án mã nguồn mở được khởi xướng bởi các thành viên của",
+  "desktopIntro2": "Sứ mệnh của chúng tôi là xây dựng một công cụ toàn diện giúp người dùng trực quan hóa dữ liệu xe một cách trực quan hơn. Bằng cách tận dụng dữ liệu telemetry thô, chúng tôi cung cấp các thông tin có giá trị như",
+  "batterySOH": "SOH Pin",
+  "and": "và",
+  "ecuVersions": "Phiên bản ECU",
+  "desktopIntro3": "—thường không hiển thị trong ứng dụng chính thức.",
+  "desktopIntro4": "Đây là một sáng kiến hoàn toàn phi thương mại, của những người đam mê, được tạo ra thuần túy bởi niềm đam mê công nghệ và cộng đồng VinFast.",
+
+  "features": {
+    "deeperInsights": "Thông tin chuyên sâu",
+    "deeperInsightsDesc": "Xem những gì bên dưới với trực quan hóa dữ liệu thô.",
+    "realTimeData": "Dữ liệu thời gian thực",
+    "realTimeDataDesc": "Cập nhật trực tiếp trạng thái pin, sạc và điều hòa."
+  }
+}

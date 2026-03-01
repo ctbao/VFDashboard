@@ -5,6 +5,8 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 import { useStore } from "@nanostores/react";
 import { vehicleStore } from "../stores/vehicleStore";
 import {
@@ -35,8 +37,9 @@ function formatDuration(startMs, endMs) {
 function formatDate(epochMs) {
   const ms = safeNumber(epochMs);
   if (!ms) return "--";
+  const locale = i18next.language === "vi" ? "vi-VN" : "en-US";
   try {
-    return new Date(ms).toLocaleDateString("vi-VN", {
+    return new Date(ms).toLocaleDateString(locale, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -49,8 +52,9 @@ function formatDate(epochMs) {
 function formatTime(epochMs) {
   const ms = safeNumber(epochMs);
   if (!ms) return "--";
+  const locale = i18next.language === "vi" ? "vi-VN" : "en-US";
   try {
-    return new Date(ms).toLocaleTimeString("vi-VN", {
+    return new Date(ms).toLocaleTimeString(locale, {
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -61,9 +65,10 @@ function formatTime(epochMs) {
 
 function formatCurrency(amount) {
   const n = safeNumber(amount);
-  if (!n) return "Free";
+  if (!n) return i18next.t("dashboard:freeCharge");
+  const locale = i18next.language === "vi" ? "vi-VN" : "en-US";
   try {
-    return new Intl.NumberFormat("vi-VN").format(n) + "đ";
+    return new Intl.NumberFormat(locale).format(n) + "đ";
   } catch {
     return `${n}đ`;
   }
@@ -72,8 +77,9 @@ function formatCurrency(amount) {
 function formatEnergy(value, decimals = 1) {
   const n = safeNumber(value);
   if (Number.isNaN(n)) return "0";
+  const locale = i18next.language === "vi" ? "vi-VN" : "en-US";
   try {
-    return new Intl.NumberFormat("vi-VN", {
+    return new Intl.NumberFormat(locale, {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     }).format(n);
@@ -143,6 +149,7 @@ function getChargingFeeInfo(session) {
 }
 
 function SessionCard({ session, maxEnergy, index }) {
+  const { t } = useTranslation("dashboard");
   // Guard: skip rendering if session is completely invalid
   if (!session || typeof session !== "object") return null;
 
@@ -173,7 +180,7 @@ function SessionCard({ session, maxEnergy, index }) {
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0 flex-1">
           <h4 className="text-sm font-bold text-gray-900 truncate">
-            {session.chargingStationName || "Unknown Station"}
+            {session.chargingStationName || t("unknownStation")}
           </h4>
           <p className="text-[10px] text-gray-400 truncate mt-0.5">
             {session.district || ""}
@@ -238,7 +245,7 @@ function SessionCard({ session, maxEnergy, index }) {
         <div className="flex items-center gap-1.5">
           {isFree && hasPromo && !hasIdleFee ? (
             <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-              Free
+              {t("freeCharge")}
             </span>
           ) : (
             <span className="text-xs font-bold text-gray-700">
@@ -259,7 +266,7 @@ function SessionCard({ session, maxEnergy, index }) {
           <p className="text-[10px] text-gray-400">
             {formatCurrency(chargeFee.price)}/kWh
             {hasPromo && chargingCost <= 0 && (
-              <span className="ml-1 text-green-500 font-bold">Free</span>
+              <span className="ml-1 text-green-500 font-bold">{t("freeCharge")}</span>
             )}
           </p>
         )}
@@ -282,8 +289,8 @@ function SessionCard({ session, maxEnergy, index }) {
             />
           </svg>
           <span className="text-[10px] font-bold text-orange-700">
-            Idle fee: {formatCurrency(idleFee.cost)}
-          </span>
+              {t("idleFeeLbl")}: {formatCurrency(idleFee.cost)}
+            </span>
           {idleFee.minutes > 0 && (
             <span className="text-[10px] text-orange-500">
               ({idleFee.minutes}m)
@@ -298,6 +305,7 @@ const MemoSessionCard = React.memo(SessionCard);
 
 // --- Inline filter bar: single-row with year → month drill-down ---
 function FilterBar({ store }) {
+  const { t } = useTranslation("dashboard");
   const {
     filterMode,
     selectedYear,
@@ -322,7 +330,7 @@ function FilterBar({ store }) {
             : "text-gray-400 hover:text-gray-600"
         }`}
       >
-        All
+        {t("allFilter")}
       </button>
 
       {availableYears.map((year) => (
@@ -371,11 +379,11 @@ function FilterBar({ store }) {
 }
 
 // --- Filter summary label ---
-function filterLabel(store) {
+function filterLabel(store, t) {
   if (store.filterMode === "month")
     return `T${store.selectedMonth}/${store.selectedYear}`;
   if (store.filterMode === "year") return `${store.selectedYear}`;
-  return "all time";
+  return t ? t("allTime") : "all time";
 }
 
 // --- Animated stat value ---
@@ -406,6 +414,7 @@ function AnimatedStat({ label, value, colorClass, bgClass, isLoading }) {
 const SCROLL_BATCH = 60;
 
 export default function ChargingHistory({ inline = false }) {
+  const { t } = useTranslation("dashboard");
   const store = useStore(chargingHistoryStore);
   const { vin } = useStore(vehicleStore);
   const [visibleCount, setVisibleCount] = useState(SCROLL_BATCH);
@@ -512,16 +521,16 @@ export default function ChargingHistory({ inline = false }) {
       <div className="flex items-center justify-between mb-3 shrink-0">
         <div>
           <h3 className="text-lg font-extrabold text-gray-900">
-            Charging History
+            {t("chargingHistory")}
           </h3>
           <p className="text-xs text-gray-400 mt-0.5 transition-all duration-300">
             {store.isLoading && store.totalLoaded === 0
-              ? "Loading..."
+              ? t("common:loading")
               : store.isLoadingMore
-                ? `Loading more... (${store.totalLoaded}/${store.totalRecords})`
+                ? `${t("loadingMore")} (${store.totalLoaded}/${store.totalRecords})`
                 : store.totalLoaded > 0
-                  ? `${store.sessions.length} of ${store.totalLoaded} sessions · ${filterLabel(store)}`
-                  : "No data"}
+                  ? `${store.sessions.length} of ${store.totalLoaded} ${t("sessions")} · ${filterLabel(store, t)}`
+                  : t("common:noData")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -533,7 +542,7 @@ export default function ChargingHistory({ inline = false }) {
             disabled={isAnyLoading}
             className="text-xs text-blue-600 hover:text-blue-800 font-bold disabled:opacity-50 transition-opacity"
           >
-            {store.isLoading ? "Loading..." : "Refresh"}
+            {store.isLoading ? t("common:loading") : t("common:refresh")}
           </button>
         </div>
       </div>
@@ -547,28 +556,28 @@ export default function ChargingHistory({ inline = false }) {
           className={`grid gap-2 mb-4 shrink-0 animate-in fade-in duration-500 ${totalIdleFee > 0 ? "grid-cols-3" : "grid-cols-2"}`}
         >
           <AnimatedStat
-            label="Energy"
+            label={t("statEnergy")}
             value={`${formatEnergy(totalKWh, 0)} kWh`}
             colorClass="text-green-800"
             bgClass="bg-green-50"
             isLoading={store.isLoading}
           />
           <AnimatedStat
-            label="Plugged"
+            label={t("statPlugged")}
             value={formatTotalTime(totalPluggedMs)}
             colorClass="text-purple-800"
             bgClass="bg-purple-50"
             isLoading={store.isLoading}
           />
           <AnimatedStat
-            label="Cost"
+            label={t("statCost")}
             value={formatCurrency(totalCost)}
             colorClass="text-blue-800"
             bgClass="bg-blue-50"
             isLoading={store.isLoading}
           />
           <AnimatedStat
-            label="Saved"
+            label={t("statSaved")}
             value={formatCurrency(totalSaved)}
             colorClass="text-amber-800"
             bgClass="bg-amber-50"
@@ -576,7 +585,7 @@ export default function ChargingHistory({ inline = false }) {
           />
           {totalIdleFee > 0 && (
             <AnimatedStat
-              label="Idle Fee"
+              label={t("statIdleFee")}
               value={formatCurrency(totalIdleFee)}
               colorClass="text-orange-800"
               bgClass="bg-orange-50"
@@ -585,7 +594,7 @@ export default function ChargingHistory({ inline = false }) {
           )}
           {totalIdleFee > 0 && (
             <AnimatedStat
-              label="Idle Time"
+              label={t("statIdleTime")}
               value={`${totalIdleMins}m`}
               colorClass="text-red-800"
               bgClass="bg-red-50"
@@ -630,7 +639,7 @@ export default function ChargingHistory({ inline = false }) {
           >
             <div className="w-5 h-5 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
             <span className="ml-2 text-xs text-gray-400">
-              {safeSessions.length - renderedSessions.length} more
+              {safeSessions.length - renderedSessions.length} {t("more")}
             </span>
           </div>
         )}
@@ -653,8 +662,8 @@ export default function ChargingHistory({ inline = false }) {
             </svg>
             <p className="text-sm font-bold">
               {store.filterMode !== "all"
-                ? `No sessions for ${filterLabel(store)}`
-                : "No charging sessions"}
+                ? `${t("noSessionsFor")} ${filterLabel(store, t)}`
+                : t("chargingHistoryEmpty")}
             </p>
           </div>
         )}

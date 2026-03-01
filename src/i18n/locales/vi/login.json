@@ -1,0 +1,19 @@
+{
+  "title": "Đăng nhập",
+  "emailPlaceholder": "Địa chỉ Email",
+  "passwordPlaceholder": "Mật khẩu",
+  "rememberMe": "Ghi nhớ đăng nhập",
+  "region": "Khu vực",
+  "regionVietnam": "Việt Nam",
+  "regionUS": "Hoa Kỳ",
+  "regionEurope": "Châu Âu",
+  "signIn": "Đăng nhập",
+  "loginFailed": "Đăng nhập thất bại",
+  "communityDescription": "Dự án mã nguồn mở, phi lợi nhuận — chia sẻ đam mê công nghệ xe điện VinFast.",
+  "communityDiscussion": "Trao đổi về dự án tại",
+  "communityGroup": "ANH EM VF9 - VF9 CLUB",
+  "disclaimer": "Không liên kết, được xác nhận hay tài trợ bởi VinFast. VinFast là nhãn hiệu đã đăng ký của VinFast Commercial and Services Trading LLC.",
+  "madeWith": "Được tạo với",
+  "madeIn": "tại Việt Nam",
+  "viewSource": "Xem mã nguồn trên GitHub"
+}

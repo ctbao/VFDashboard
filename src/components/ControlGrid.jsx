@@ -1,4 +1,5 @@
 import { useStore } from "@nanostores/react";
+import { useTranslation } from "react-i18next";
 import { vehicleStore } from "../stores/vehicleStore";
 import { mqttStore } from "../stores/mqttStore";
 import { DEFAULT_LOCATION } from "../constants/vehicle";
@@ -28,6 +29,7 @@ const WeatherRow = ({ label, value, icon, subValue }) => (
 export function EnvironmentCard() {
   const v = useStore(vehicleStore);
   const mqtt = useStore(mqttStore);
+  const { t } = useTranslation("common");
   const isWaiting = mqtt.status === "connected" || mqtt.status === "connecting";
   return (
     <div className="rounded-3xl bg-white p-4 md:p-3.5 shadow-sm border border-gray-100 flex flex-col h-full">
@@ -47,7 +49,7 @@ export function EnvironmentCard() {
                 d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
               />
             </svg>
-            Environment
+            {t("environment")}
           </h3>
         </div>
 
@@ -78,9 +80,9 @@ export function EnvironmentCard() {
             {v.weather_address || v.location_address ? (
               v.weather_address || v.location_address
             ) : v.isEnriching ? (
-              <span className="animate-pulse">Loading location...</span>
+              <span className="animate-pulse">{t("locating")}</span>
             ) : (
-              "Outside"
+              t("outside")
             )}
           </span>
         </div>
@@ -88,7 +90,7 @@ export function EnvironmentCard() {
 
       <div className="space-y-1">
         <WeatherRow
-          label="Outside"
+          label={t("outside")}
           value={
             v.outside_temp !== undefined && v.outside_temp !== null ? (
               `${v.outside_temp}°C`
@@ -117,7 +119,7 @@ export function EnvironmentCard() {
         />
 
         <WeatherRow
-          label="Cabin"
+          label={t("cabin")}
           value={
             v.inside_temp !== undefined && v.inside_temp !== null
               ? `${v.inside_temp}°C`
@@ -125,7 +127,7 @@ export function EnvironmentCard() {
                 ? <span className="animate-pulse text-gray-300">--°C</span>
                 : "N/A"
           }
-          subValue={`Fan: ${v.fan_speed !== undefined && v.fan_speed !== null ? v.fan_speed : isWaiting ? "..." : "N/A"}`}
+          subValue={`${t("common:fan")}: ${v.fan_speed !== undefined && v.fan_speed !== null ? v.fan_speed : isWaiting ? "..." : "N/A"}`}
           icon={
             <svg
               className="w-6 h-6"
@@ -146,7 +148,7 @@ export function EnvironmentCard() {
 
       <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-100">
         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100">
-          <span className="text-xs font-bold text-gray-500">Pet Mode</span>
+          <span className="text-xs font-bold text-gray-500">{t("petMode")}</span>
           <span
             className={`text-[10px] font-bold px-2 py-1 rounded-lg ${Number(v.pet_mode) === 1 ? "bg-blue-600 text-white shadow-md shadow-blue-200" : "bg-gray-200 text-gray-500"}`}
           >
@@ -154,7 +156,7 @@ export function EnvironmentCard() {
           </span>
         </div>
         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100">
-          <span className="text-xs font-bold text-gray-500">Camp Mode</span>
+          <span className="text-xs font-bold text-gray-500">{t("campMode")}</span>
           <span
             className={`text-[10px] font-bold px-2 py-1 rounded-lg ${Number(v.camp_mode) === 1 ? "bg-blue-600 text-white shadow-md shadow-blue-200" : "bg-gray-200 text-gray-500"}`}
           >
@@ -169,6 +171,7 @@ export function EnvironmentCard() {
 export function MapCard() {
   const v = useStore(vehicleStore);
   const mqtt = useStore(mqttStore);
+  const { t } = useTranslation("common");
   const isWaiting = mqtt.status === "connected" || mqtt.status === "connecting";
   const isDefaultLoc =
     Number(v.latitude) === DEFAULT_LOCATION.LATITUDE &&
@@ -199,7 +202,7 @@ export function MapCard() {
                 d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
               />
             </svg>
-            Vehicle Location
+            {t("vehicleLocation")}
           </h3>
         </div>
 
@@ -232,7 +235,7 @@ export function MapCard() {
               title={v.location_address || "Open in Google Maps"}
             >
               <span className="truncate">
-                {v.location_address || "Locating..."}
+                {v.location_address || t("locating")}
               </span>
               <svg
                 className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
@@ -250,11 +253,11 @@ export function MapCard() {
             </a>
           ) : v.isEnriching || isWaiting ? (
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide animate-pulse">
-              Locating...
+              {t("locating")}
             </span>
           ) : (
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
-              Offline
+              {t("offline")}
             </span>
           )}
         </div>
@@ -278,7 +281,7 @@ export function MapCard() {
           <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 bg-gray-50">
             <div className="w-12 h-12 rounded-full border-4 border-gray-200 border-t-blue-500 animate-spin mb-3"></div>
             <span className="text-xs font-bold uppercase tracking-wider">
-              Locating...
+              {t("locating")}
             </span>
           </div>
         ) : (
@@ -288,7 +291,7 @@ export function MapCard() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             <span className="text-xs font-bold uppercase tracking-wider text-gray-300">
-              Offline
+              {t("offline")}
             </span>
           </div>
         )}

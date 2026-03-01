@@ -1,3 +1,4 @@
+import "../i18n";
 import React, { useState, Suspense } from "react";
 import { useStore } from "@nanostores/react";
 import { vehicleStore } from "../stores/vehicleStore";

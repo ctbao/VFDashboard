@@ -1,6 +1,8 @@
+import { useTranslation } from "react-i18next";
 import ChargingHistory from "./ChargingHistory";
 
 export default function ChargingHistoryDrawer({ isOpen, onClose }) {
+  const { t } = useTranslation(["dashboard", "common"]);
   if (!isOpen) return null;
 
   return (
@@ -30,10 +32,10 @@ export default function ChargingHistoryDrawer({ isOpen, onClose }) {
                   d="M13 10V3L4 14h7v7l9-11h-7z"
                 />
               </svg>
-              Charging History
+              {t("dashboard:chargingHistory")}
             </h2>
             <p className="text-xs text-gray-500 mt-1">
-              All charging sessions from your VinFast account
+              {t("dashboard:chargingHistorySubtitle")}
             </p>
           </div>
           <button

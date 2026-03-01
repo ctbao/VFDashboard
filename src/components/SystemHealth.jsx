@@ -1,11 +1,13 @@
 import { useStore } from "@nanostores/react";
+import { useTranslation } from "react-i18next";
 import { vehicleStore } from "../stores/vehicleStore";
 import { mqttStore } from "../stores/mqttStore";
-import { TIRE_PRESSURE, VEHICLE_STATUS_LABELS } from "../constants/vehicle";
+import { TIRE_PRESSURE } from "../constants/vehicle";
 
 export default function SystemHealth() {
   const data = useStore(vehicleStore);
   const mqtt = useStore(mqttStore);
+  const { t } = useTranslation(["common", "vehicle"]);
   const isWaiting = mqtt.status === "connected" || mqtt.status === "connecting";
 
   // Helpers (Unified Theme Colors)
@@ -21,8 +23,8 @@ export default function SystemHealth() {
 
     if (!tire_pressure_fl && !tire_pressure_fr)
       return {
-        status: "No Data",
-        detail: "No tire pressure data available",
+        status: t("vehicle:noData"),
+        detail: t("vehicle:noTirePressureData"),
         color: "text-gray-400",
         bg: "bg-gray-100",
         iconColor: "text-gray-400",
@@ -40,14 +42,14 @@ export default function SystemHealth() {
 
     if (lowTires.length > 0)
       return {
-        status: "Low Pressure",
+        status: t("vehicle:lowPressure"),
         detail: detailText,
         color: "text-red-700",
         bg: "bg-red-50",
         iconColor: "text-red-500",
       };
     return {
-      status: "All OK",
+      status: t("vehicle:allOk"),
       detail: detailText,
       color: "text-emerald-700",
       bg: "bg-emerald-50",
@@ -70,7 +72,7 @@ export default function SystemHealth() {
     ) {
       return {
         status: "--",
-        detail: "No door status data",
+        detail: t("vehicle:noDoorData"),
         color: "text-gray-400",
         bg: "bg-gray-100",
         iconColor: "text-gray-400",
@@ -87,15 +89,15 @@ export default function SystemHealth() {
 
     if (openDoors.length > 0)
       return {
-        status: `${openDoors.length} Open`,
-        detail: `${openDoors.join(", ")} is open`,
+        status: `${openDoors.length} ${t("vehicle:xOpen")}`,
+        detail: `${openDoors.join(", ")} ${t("vehicle:isOpen")}`,
         color: "text-amber-700",
         bg: "bg-amber-50",
         iconColor: "text-amber-500",
       };
     return {
-      status: "All Closed",
-      detail: "All doors, hood, and trunk are closed",
+      status: t("vehicle:allClosed"),
+      detail: t("vehicle:allClosedDesc"),
       color: "text-emerald-700",
       bg: "bg-emerald-50",
       iconColor: "text-emerald-500",
@@ -106,7 +108,7 @@ export default function SystemHealth() {
     if (data.thermal_warning === undefined || data.thermal_warning === null) {
       return {
         status: "--",
-        detail: "No safety data",
+        detail: t("vehicle:noSafetyData"),
         color: "text-gray-400",
         bg: "bg-gray-100",
         iconColor: "text-gray-400",
@@ -115,16 +117,16 @@ export default function SystemHealth() {
 
     if (Number(data.thermal_warning) === 1) {
       return {
-        status: "Warning",
-        detail: "Thermal Runaway Warning Active",
+        status: t("vehicle:statusWarning"),
+        detail: t("vehicle:thermalWarning"),
         color: "text-red-700",
         bg: "bg-red-50",
         iconColor: "text-red-600",
       };
     }
     return {
-      status: "Normal",
-      detail: "System Normal (No Thermal Warning)",
+      status: t("vehicle:statusNormal"),
+      detail: t("vehicle:systemNormal"),
       color: "text-emerald-700",
       bg: "bg-emerald-50",
       iconColor: "text-emerald-500",
@@ -135,7 +137,7 @@ export default function SystemHealth() {
     if (data.service_alert === undefined || data.service_alert === null) {
       return {
         status: "--",
-        detail: "No service data",
+        detail: t("vehicle:noServiceData"),
         color: "text-gray-400",
         bg: "bg-gray-100",
         iconColor: "text-gray-400",
@@ -163,9 +165,9 @@ export default function SystemHealth() {
 
     if (data.service_alert && data.service_alert != 0) {
       return {
-        status: "Due",
+        status: t("vehicle:serviceDue"),
         detail:
-          `Service is due. ${mileageInfo} ${dateInfo} ${extraInfo}`.trim(),
+          `${t("vehicle:serviceDueDesc")} ${mileageInfo} ${dateInfo} ${extraInfo}`.trim(),
         color: "text-blue-700",
         bg: "bg-blue-50",
         iconColor: "text-blue-500",
@@ -175,10 +177,10 @@ export default function SystemHealth() {
     const hasServiceData = mileageInfo || dateInfo || extraInfo;
 
     return {
-      status: hasServiceData ? "Scheduled" : "No Alerts",
+      status: hasServiceData ? t("vehicle:serviceScheduled") : t("vehicle:noAlerts"),
       detail: hasServiceData
         ? `${mileageInfo} ${dateInfo} ${extraInfo}`.trim()
-        : "No service alerts",
+        : t("vehicle:noServiceAlerts"),
       color: hasServiceData ? "text-blue-600" : "text-gray-500",
       bg: hasServiceData ? "bg-blue-50" : "bg-gray-50",
       iconColor: hasServiceData ? "text-blue-500" : "text-gray-400",
@@ -192,7 +194,7 @@ export default function SystemHealth() {
     if (window_status === undefined || window_status === null) {
       return {
         status: "--",
-        detail: "No window status data",
+        detail: t("vehicle:noWindowData"),
         color: "text-gray-400",
         bg: "bg-gray-100",
         iconColor: "text-gray-400",
@@ -204,16 +206,16 @@ export default function SystemHealth() {
 
     if (isOpen) {
       return {
-        status: "Open",
-        detail: "One or more windows are open",
+        status: t("vehicle:xOpen"),
+        detail: t("vehicle:oneOrMoreWindowsOpen"),
         color: "text-amber-700",
         bg: "bg-amber-50",
         iconColor: "text-amber-500",
       };
     }
     return {
-      status: "Closed",
-      detail: "All windows are closed",
+      status: t("vehicle:windowClosed"),
+      detail: t("vehicle:allWindowsClosed"),
       color: "text-emerald-700",
       bg: "bg-emerald-50",
       iconColor: "text-emerald-500",
@@ -225,7 +227,7 @@ export default function SystemHealth() {
     if (handbrake_status === undefined || handbrake_status === null) {
       return {
         status: "--",
-        detail: "No handbrake data",
+        detail: t("vehicle:noHandbrakeData"),
         color: "text-gray-400",
         bg: "bg-gray-100",
         iconColor: "text-gray-400",
@@ -235,16 +237,16 @@ export default function SystemHealth() {
     // Usually 1 = Engaged
     if (handbrake_status) {
       return {
-        status: "Engaged",
-        detail: "Handbrake is ON",
+        status: t("vehicle:handbrakeEngaged"),
+        detail: t("vehicle:handbrakeOn"),
         color: "text-gray-700",
         bg: "bg-gray-100",
         iconColor: "text-red-500", // Red icon for Handbrake is standard
       };
     }
     return {
-      status: "Released",
-      detail: "Handbrake is OFF",
+      status: t("vehicle:handbrakeReleased"),
+      detail: t("vehicle:handbrakeOff"),
       color: "text-gray-500",
       bg: "bg-gray-50",
       iconColor: "text-gray-400",
@@ -260,7 +262,7 @@ export default function SystemHealth() {
 
   const items = [
     {
-      label: VEHICLE_STATUS_LABELS.SAFETY,
+      label: t("vehicle:safetyCheck"),
       value: safety.status,
       detail: safety.detail,
       bg: safety.bg,
@@ -269,7 +271,7 @@ export default function SystemHealth() {
       iconColor: safety.iconColor,
     },
     {
-      label: VEHICLE_STATUS_LABELS.HANDBRAKE,
+      label: t("vehicle:handbrake"),
       value: handbrake.status,
       detail: handbrake.detail,
       bg: handbrake.bg,
@@ -278,7 +280,7 @@ export default function SystemHealth() {
       iconColor: handbrake.iconColor,
     },
     {
-      label: VEHICLE_STATUS_LABELS.DOORS,
+      label: t("vehicle:doorsAndLocks"),
       value: door.status,
       detail: door.detail,
       bg: door.bg,
@@ -287,7 +289,7 @@ export default function SystemHealth() {
       iconColor: door.iconColor,
     },
     {
-      label: VEHICLE_STATUS_LABELS.WINDOWS,
+      label: t("vehicle:windows"),
       value: windowStat.status,
       detail: windowStat.detail,
       bg: windowStat.bg,
@@ -296,7 +298,7 @@ export default function SystemHealth() {
       iconColor: windowStat.iconColor,
     },
     {
-      label: VEHICLE_STATUS_LABELS.TIRES,
+      label: t("vehicle:tires"),
       value: tire.status,
       detail: tire.detail,
       bg: tire.bg,
@@ -305,7 +307,7 @@ export default function SystemHealth() {
       iconColor: tire.iconColor,
     },
     {
-      label: VEHICLE_STATUS_LABELS.SERVICE,
+      label: t("vehicle:service"),
       value: service.status,
       detail: service.detail,
       bg: service.bg,
@@ -314,24 +316,24 @@ export default function SystemHealth() {
       iconColor: service.iconColor,
     },
     {
-      label: VEHICLE_STATUS_LABELS.TBOX,
+      label: t("vehicle:tbox"),
       value:
         data.tbox_version && data.tbox_version !== "--"
           ? data.tbox_version
           : "N/A",
-      detail: "T-Box Software Version",
+      detail: t("vehicle:tboxSoftware"),
       bg: "bg-gray-50",
       txt: "text-gray-600",
       icon: "wifi",
       iconColor: "text-blue-500",
     },
     {
-      label: VEHICLE_STATUS_LABELS.FIRMWARE,
+      label: t("vehicle:firmware"),
       value:
         data.firmware_version && data.firmware_version !== "--"
           ? data.firmware_version
           : "N/A",
-      detail: "Vehicle Firmware Version",
+      detail: t("vehicle:vehicleFirmware"),
       bg: "bg-gray-50",
       txt: "text-gray-600",
       icon: "chip",
@@ -502,7 +504,7 @@ export default function SystemHealth() {
             d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
           />
         </svg>
-        Vehicle Status
+        {t("common:vehicleStatus")}
       </h3>
 
       {/* MOBILE ONLY: Climate Section */}
@@ -512,7 +514,7 @@ export default function SystemHealth() {
         {/* Outside Temperature */}
         <div className="p-2 rounded-xl text-center bg-gray-50 border border-gray-100 flex flex-col justify-center min-h-[60px]">
           <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-            Outside
+          {t("common:outside")}
           </p>
           <div className="flex items-center justify-center gap-1.5">
             <svg
@@ -539,7 +541,7 @@ export default function SystemHealth() {
         {/* Cabin Temperature */}
         <div className="p-2 rounded-xl text-center bg-gray-50 border border-gray-100 flex flex-col justify-center min-h-[60px]">
           <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-            Cabin
+          {t("common:cabin")}
           </p>
           <span className={`text-base font-black leading-none ${data.inside_temp !== null && data.inside_temp !== undefined ? "text-gray-700" : isWaiting ? "text-gray-300 animate-pulse" : "text-gray-400"}`}>
             {data.inside_temp !== null && data.inside_temp !== undefined
@@ -555,7 +557,7 @@ export default function SystemHealth() {
           <p
             className={`text-[8px] font-bold uppercase tracking-wider mb-1 ${(data.fan_speed ?? 0) > 0 ? "text-blue-400" : "text-gray-400"}`}
           >
-            Fan
+          {t("common:fan")}
           </p>
           <div className="flex items-center justify-center gap-1">
             {(data.fan_speed ?? 0) > 0 ? (
@@ -581,7 +583,7 @@ export default function SystemHealth() {
               </>
             ) : (
               <span className="text-base font-black text-gray-400 leading-none uppercase">
-                Off
+                {t("common:off")}
               </span>
             )}
           </div>

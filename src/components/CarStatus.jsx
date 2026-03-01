@@ -1,10 +1,12 @@
 import { useStore } from "@nanostores/react";
+import { useTranslation } from "react-i18next";
 import { vehicleStore } from "../stores/vehicleStore";
 import { mqttStore } from "../stores/mqttStore";
 
 export default function CarStatus() {
   const data = useStore(vehicleStore);
   const mqtt = useStore(mqttStore);
+  const { t } = useTranslation(["vehicle", "common"]);
   const isWaiting = mqtt.status === "connected" || mqtt.status === "connecting";
   const { battery_level, charging_status, isRefreshing } = data;
   // Normalize charging status (can be boolean or numeric 1=Charging)
@@ -73,7 +75,7 @@ export default function CarStatus() {
                   d="M13 10V3L4 14h7v7l9-11h-7z"
                 />
               </svg>
-              Energy
+              {t("vehicle:energy")}
             </h3>
             <div className="flex items-center gap-2">
               {isCharging && (
@@ -134,7 +136,7 @@ export default function CarStatus() {
                           </span>
                         </span>
                         <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
-                          SOC
+                          {t("vehicle:soc")}
                         </span>
                       </>
                     ) : isWaiting ? (
@@ -152,7 +154,7 @@ export default function CarStatus() {
                       {data.battery_serial && (
                         <div className="flex flex-col items-center leading-none">
                           <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">
-                            Batt. Serial
+                            {t("vehicle:battSerial")}
                           </span>
                           <span className="text-[9px] text-gray-600 font-bold font-mono tracking-wide">
                             {data.battery_serial}
@@ -162,7 +164,7 @@ export default function CarStatus() {
                       {data.battery_manufacture_date && (
                         <div className="flex flex-col items-center leading-none">
                           <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">
-                            Batt. Date
+                            {t("vehicle:battDate")}
                           </span>
                           <span className="text-[9px] text-gray-600 font-bold font-mono tracking-wide">
                             {data.battery_manufacture_date}
@@ -179,7 +181,7 @@ export default function CarStatus() {
                       {data.yearOfProduct ? (
                         <div className="flex flex-col items-center leading-none">
                           <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">
-                            Model Year
+                            {t("vehicle:modelYear")}
                           </span>
                           <span className="text-[9px] text-gray-600 font-bold font-mono tracking-wide">
                             {data.yearOfProduct}
@@ -189,7 +191,7 @@ export default function CarStatus() {
                       {data.battery_type && data.battery_type !== "--" ? (
                         <div className="flex flex-col items-center leading-none">
                           <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">
-                            Pack Type
+                            {t("vehicle:packType")}
                           </span>
                           <span className="text-[9px] text-gray-600 font-bold font-mono tracking-wide">
                             {data.battery_type}
@@ -198,7 +200,7 @@ export default function CarStatus() {
                       ) : data.vehicleVariant && data.vehicleVariant !== "--" ? (
                         <div className="flex flex-col items-center leading-none">
                           <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">
-                            Variant
+                            {t("vehicle:variant")}
                           </span>
                           <span className="text-[9px] text-gray-600 font-bold font-mono tracking-wide">
                             {data.vehicleVariant}
@@ -215,7 +217,7 @@ export default function CarStatus() {
                 {/* Range */}
                 <div className="bg-blue-50 px-2 py-3 rounded-2xl flex flex-col items-center justify-center text-center border border-blue-100 shadow-sm hover:scale-105 transition-transform">
                   <p className="text-blue-400 text-[8px] font-bold uppercase tracking-wider mb-0.5">
-                    {isCharging ? "Now Range" : "Est. Range"}
+                    {isCharging ? t("vehicle:nowRange") : t("vehicle:estRange")}
                   </p>
                   {data.range !== null ? (
                     <>
@@ -252,7 +254,7 @@ export default function CarStatus() {
                 {/* Health */}
                 <div className="bg-gray-50 px-2 py-2.5 rounded-2xl flex flex-col items-center justify-center text-center border border-gray-100">
                   <p className="text-gray-400 text-[8px] font-bold uppercase tracking-wider mb-0.5">
-                    Health
+                    {t("vehicle:health")}
                   </p>
                   {data.soh_percentage !== null ? (
                     <p className="text-base font-black leading-none text-emerald-600">
@@ -271,7 +273,7 @@ export default function CarStatus() {
                     className={`px-2 py-2.5 rounded-2xl flex flex-col items-center justify-center text-center border ${data.battery_health_12v < 50 ? "bg-red-50 border-red-100" : "bg-gray-50 border-gray-100"}`}
                   >
                     <p className={`text-[8px] font-bold uppercase tracking-wider mb-0.5 ${data.battery_health_12v < 50 ? "text-red-500" : "text-gray-400"}`}>
-                      12V Batt
+                      {t("vehicle:battery12v")}
                     </p>
                     <p className={`text-base font-black leading-none ${data.battery_health_12v < 50 ? "text-red-600" : "text-emerald-600"}`}>
                       {data.battery_health_12v}%
@@ -279,13 +281,13 @@ export default function CarStatus() {
                   </div>
                 ) : isRefreshing ? (
                   <div className="px-2 py-2.5 rounded-2xl flex flex-col items-center justify-center text-center border bg-gray-50 border-gray-100">
-                    <p className="text-gray-400 text-[8px] font-bold uppercase tracking-wider mb-0.5">12V Batt</p>
+                    <p className="text-gray-400 text-[8px] font-bold uppercase tracking-wider mb-0.5">{t("vehicle:battery12v")}</p>
                     <div className="h-4 w-10 bg-gray-100 animate-shimmer rounded"></div>
                   </div>
                 ) : data.odometer !== null ? (
                   <div className="px-2 py-2.5 rounded-2xl flex flex-col items-center justify-center text-center border bg-gray-50 border-gray-100">
                     <p className="text-gray-400 text-[8px] font-bold uppercase tracking-wider mb-0.5">
-                      Odometer
+                      {t("vehicle:odometer")}
                     </p>
                     <p className="text-base font-black leading-none text-gray-700">
                       {Number(data.odometer).toLocaleString()}
@@ -294,7 +296,7 @@ export default function CarStatus() {
                   </div>
                 ) : (
                   <div className="px-2 py-2.5 rounded-2xl flex flex-col items-center justify-center text-center border bg-gray-50 border-gray-100">
-                    <p className="text-gray-400 text-[8px] font-bold uppercase tracking-wider mb-0.5">12V Batt</p>
+                    <p className="text-gray-400 text-[8px] font-bold uppercase tracking-wider mb-0.5">{t("vehicle:battery12v")}</p>
                     <p className="text-base font-black leading-none text-gray-300">--%</p>
                   </div>
                 )}
@@ -312,7 +314,7 @@ export default function CarStatus() {
             {/* Status */}
             <div className="p-2 rounded-xl text-center bg-gray-50 border border-gray-100 flex flex-col justify-center min-h-[60px]">
               <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                Status
+                {t("vehicle:status")}
               </p>
               <div className="flex flex-col items-center justify-center">
                 {isCharging ? (
@@ -345,7 +347,7 @@ export default function CarStatus() {
                   </svg>
                 )}
                 <span className="text-[8px] font-bold text-gray-500 leading-none">
-                  {isCharging ? "Charging" : "Unplugged"}
+                  {isCharging ? t("vehicle:charging") : t("vehicle:unplugged")}
                 </span>
               </div>
             </div>
@@ -355,7 +357,7 @@ export default function CarStatus() {
               className={`p-2 rounded-xl text-center border flex flex-col justify-center min-h-[60px] ${isCharging ? "bg-white border-blue-100 shadow-sm" : "bg-gray-50 border-gray-100"}`}
             >
               <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                Target
+                {t("vehicle:target")}
               </p>
               <div className="flex items-center justify-center">
                 <span
@@ -371,7 +373,7 @@ export default function CarStatus() {
               className={`p-2 rounded-xl text-center border flex flex-col justify-center min-h-[60px] ${isCharging ? "bg-white border-blue-100 shadow-sm" : "bg-gray-50 border-gray-100"}`}
             >
               <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-1 whitespace-nowrap">
-                Time Left
+                {t("vehicle:timeLeft")}
               </p>
               <div className="flex items-center justify-center">
                 <span

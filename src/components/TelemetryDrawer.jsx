@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "@nanostores/react";
 import {
   vehicleStore,
@@ -525,6 +526,8 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
     URL.revokeObjectURL(url);
   };
 
+  const { t } = useTranslation(["telemetry", "common"]);
+
   if (!isOpen) return null;
 
   return (
@@ -554,7 +557,7 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
                   d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
                 />
               </svg>
-              Deep Scan
+              {t("telemetry:drawerTitle")}
             </h2>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <span className="text-xs font-mono text-gray-500 uppercase tracking-tight bg-white/70 px-1.5 py-0.5 rounded border border-gray-200">
@@ -572,7 +575,7 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
               )}
               {vehicle.isScanning && filteredData.length > 0 && (
                 <span className="text-[10px] text-green-600 bg-green-100 px-1.5 py-0.5 rounded font-bold animate-pulse">
-                  Updating...
+                  {t("telemetry:updateBadge")}
                 </span>
               )}
             </div>
@@ -602,7 +605,7 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
           <div className="relative flex-1">
             <input
               type="text"
-              placeholder="Search by key or value..."
+              placeholder={t("telemetry:searchPlaceholder")}
               className="w-full pl-9 pr-4 py-2 bg-gray-100 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent rounded-lg text-sm transition-all outline-none"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -641,7 +644,7 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
               />
             </svg>
             <span className="hidden sm:inline">
-              {vehicle.isScanning ? "Refreshing..." : "Refresh"}
+              {vehicle.isScanning ? t("common:refreshing") : t("common:refresh")}
             </span>
           </button>
           <button
@@ -663,7 +666,7 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
               />
             </svg>
-            <span className="hidden sm:inline">Export</span>
+            <span className="hidden sm:inline">{t("common:export")}</span>
           </button>
         </div>
 
@@ -685,9 +688,9 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
                 />
               </svg>
               <p className="font-medium">
-                {searchTerm ? "No results found" : "No telemetry data yet"}
+                {searchTerm ? t("telemetry:noResultsFound") : t("telemetry:noTelemetryYet")}
               </p>
-              <p className="text-xs mt-1">MQTT data will appear as it arrives</p>
+              <p className="text-xs mt-1">{t("telemetry:mqttWaiting")}</p>
             </div>
           ) : filteredData.length === 0 && vehicle.isScanning ? (
             <div className="flex flex-col items-center justify-center h-64 gap-4">
@@ -709,13 +712,13 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
               </div>
               <div className="text-center">
                 <p className="text-gray-900 font-bold">
-                  Loading telemetry...
+                  {t("telemetry:loadingTelemetry")}
                 </p>
                 <p className="text-gray-500 text-xs mt-1">
-                  Waiting for MQTT data...
+                  {t("telemetry:waitingMqttData")}
                 </p>
                 <p className="text-[10px] text-gray-400 mt-2">
-                  Data will appear progressively as it arrives
+                  {t("telemetry:progressiveLoad")}
                 </p>
               </div>
             </div>
@@ -728,11 +731,11 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
                       <GroupIcon icon={group.icon} />
                       <div>
                         <h3 className="text-xs font-black text-gray-700 uppercase tracking-widest leading-none">
-                          {group.label}
+                          {t(`telemetry:groups.${group.id}`, group.label)}
                         </h3>
                         {group.description && (
                           <p className="text-[10px] text-gray-400 mt-0.5">
-                            {group.description}
+                            {t(`telemetry:descriptions.${group.id}`, group.description)}
                           </p>
                         )}
                       </div>
@@ -789,7 +792,7 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
                                   {fieldConfig?.label ||
                                     item.name ||
                                     item.alias ||
-                                    "Unknown Parameter"}
+                                    t("telemetry:unknownParameter")}
                                 </p>
                                 {displayUnit && (
                                   <span className="shrink-0 text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded ml-2">
@@ -829,7 +832,7 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
                                           d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                                         />
                                       </svg>
-                                      No telemetry data available
+                                      {t("telemetry:noTelemetryAvailable")}
                                     </span>
                                   ) : (
                                     formattedValue
@@ -851,18 +854,18 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-blue-50 text-[10px] text-gray-500 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
-            <span className="font-bold">{filteredData.length} parameters</span>
+            <span className="font-bold">{filteredData.length} {t("telemetry:parameters")}</span>
             <span className="text-gray-300">|</span>
-            <span>{groupedData.length} categories</span>
+            <span>{groupedData.length} {t("telemetry:categories")}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1">
               <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-              Critical
+              {t("telemetry:critical")}
             </span>
             <span className="inline-flex items-center gap-1">
               <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
-              Warning
+              {t("telemetry:warning")}
             </span>
           </div>
         </div>

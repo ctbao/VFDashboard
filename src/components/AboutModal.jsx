@@ -1,4 +1,7 @@
+import { useTranslation } from "react-i18next";
+
 export default function AboutModal({ isOpen, onClose }) {
+  const { t } = useTranslation("about");
   if (!isOpen) return null;
 
   return (
@@ -35,29 +38,26 @@ export default function AboutModal({ isOpen, onClose }) {
           {/* Header */}
           <div className="text-center mb-6">
             <h2 className="text-2xl font-black text-gray-900 mb-1">
-              VinFast Dashboard
+              {t("title")}
             </h2>
             <p className="text-sm font-bold text-gray-500 tracking-wider uppercase">
-              Open Source by{" "}
-              <span className="text-blue-600">VF9 Club Vietnam</span>
+              {t("openSourceBy")}{" "}
+              <span className="text-blue-600">{t("club")}</span>
             </p>
           </div>
 
           {/* Mobile Content (Short, No Images) */}
           <div className="md:hidden space-y-4">
             <p className="text-gray-700 text-sm leading-relaxed">
-              A community hobby project developed to provide deeper insights
-              into your vehicle&apos;s data. We visualize raw telemetry from
-              VinFast servers to show details often missing from the official
-              app.
+              {t("mobileDescription")}
             </p>
 
             <div className="bg-gray-50 rounded-2xl p-4 space-y-2 border border-gray-100">
-              <h3 className="font-bold text-gray-900 text-sm">Main Goals</h3>
+              <h3 className="font-bold text-gray-900 text-sm">{t("mainGoals")}</h3>
               <ul className="text-sm text-gray-600 space-y-1 list-disc pl-4">
-                <li>Visualize hidden data (SOH, ECU versions)</li>
-                <li>Clear, intuitive status monitoring</li>
-                <li>Community-drived & Non-commercial</li>
+                <li>{t("goals.visualizeHidden")}</li>
+                <li>{t("goals.clearMonitoring")}</li>
+                <li>{t("goals.communityDriven")}</li>
               </ul>
             </div>
 
@@ -74,8 +74,8 @@ export default function AboutModal({ isOpen, onClose }) {
                   GitHub
                 </a>
               </div>
-              &quot;A tool for enthusiasts, by enthusiasts.&quot; <br />
-              Not affiliated with VinFast Auto.
+              &quot;{t("tagline")}&quot; <br />
+              {t("notAffiliated")}
             </div>
           </div>
 
@@ -85,46 +85,41 @@ export default function AboutModal({ isOpen, onClose }) {
               <div className="space-y-4">
                 <div className="prose prose-blue prose-sm">
                   <p className="text-gray-600 leading-snug">
-                    <strong>VinFast Dashboard</strong> is an open-source project
-                    initiated by members of <strong>VF9 Club Vietnam</strong>.
+                    <strong>{t("title")}</strong> is an open-source project
+                    initiated by members of <strong>{t("club")}</strong>.
                   </p>
                   <p className="text-gray-600 leading-snug">
-                    Our mission is to build a comprehensive tool that helps
-                    users visualize vehicle data more intuitively. By leveraging
-                    raw telemetry, we surface valuable insights—such as
+                    {t("desktopIntro2")}&mdash;such as
                     <span className="text-blue-600 font-medium">
                       {" "}
-                      Battery SOH
+                      {t("batterySOH")}
                     </span>{" "}
-                    and{" "}
+                    {t("and")}{" "}
                     <span className="text-blue-600 font-medium">
-                      ECU Versions
+                      {t("ecuVersions")}
                     </span>
-                    —often not visible in the official app.
+                    {t("desktopIntro3")}
                   </p>
                   <p className="text-gray-600 leading-snug">
-                    This is strictly a{" "}
-                    <strong>non-commercial, hobbyist initiative</strong> created
-                    purely out of passion for technology and the VinFast
-                    community.
+                    {t("desktopIntro4")}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                     <h4 className="font-bold text-blue-800 mb-1 text-sm">
-                      Deeper Insights
+                      {t("features.deeperInsights")}
                     </h4>
                     <p className="text-xs text-blue-600">
-                      See what&apos;s under the hood with raw visualization.
+                      {t("features.deeperInsightsDesc")}
                     </p>
                   </div>
                   <div className="bg-green-50 p-3 rounded-lg border border-green-100">
                     <h4 className="font-bold text-green-800 mb-1 text-sm">
-                      Real-time Data
+                      {t("features.realTimeData")}
                     </h4>
                     <p className="text-xs text-green-600">
-                      Live updates for battery, charging, and climate status.
+                      {t("features.realTimeDataDesc")}
                     </p>
                   </div>
                 </div>
@@ -139,7 +134,7 @@ export default function AboutModal({ isOpen, onClose }) {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
                     <span className="text-white font-bold text-xs">
-                      Visualizing Hidden Data
+                      {t("visualizingHiddenData")}
                     </span>
                   </div>
                 </div>
@@ -148,7 +143,7 @@ export default function AboutModal({ isOpen, onClose }) {
 
             <div className="mt-6 pt-4 border-t border-gray-100 text-center">
               <div className="flex justify-center gap-4 text-xs text-gray-400 mb-2">
-                <span>v1.0.0 (Stable)</span>
+                <span>{t("versionStable")}</span>
                 <span>•</span>
                 <a
                   href="https://github.com/VF9-Club/VFDashboard"
@@ -156,7 +151,7 @@ export default function AboutModal({ isOpen, onClose }) {
                   rel="noopener noreferrer"
                   className="hover:text-blue-600 flex items-center gap-1 font-medium transition-colors"
                 >
-                  View Source on GitHub
+                  {t("viewSourceGitHub")}
                   <svg
                     className="w-3 h-3"
                     fill="none"
@@ -173,12 +168,10 @@ export default function AboutModal({ isOpen, onClose }) {
                 </a>
               </div>
               <p className="text-sm text-gray-500 font-medium">
-                Made with ❤️ in Vietnam
+                {t("madeWithLove")}
               </p>
               <p className="text-xs text-gray-400 mt-1 max-w-xl mx-auto leading-normal">
-                Disclaimer: This software is not affiliated with, endorsed by,
-                or connected to VinFast Auto or its subsidiaries. It is provided
-                &quot;as is&quot; for educational and personal use only.
+                {t("disclaimer")}
               </p>
             </div>
           </div>

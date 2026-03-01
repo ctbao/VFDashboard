@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 const NavItem = ({ id, label, icon, active, onClick }) => (
   <button
@@ -26,10 +27,11 @@ const NavItem = ({ id, label, icon, active, onClick }) => (
 );
 
 export default function MobileNav({ activeTab, onTabChange, onScan }) {
+  const { t } = useTranslation("common");
   const tabs = [
     {
       id: "vehicle",
-      label: "Vehicle",
+      label: t("vehicle"),
       icon: (
         <svg viewBox="0 0 512 512" fill="currentColor">
           <g transform="translate(0, 512) scale(0.1, -0.1)">
@@ -43,7 +45,7 @@ export default function MobileNav({ activeTab, onTabChange, onScan }) {
     },
     {
       id: "energy_env",
-      label: "Energy",
+      label: t("energy"),
       icon: (
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -57,7 +59,7 @@ export default function MobileNav({ activeTab, onTabChange, onScan }) {
     },
     {
       id: "status",
-      label: "Status",
+      label: t("status"),
       icon: (
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -71,7 +73,7 @@ export default function MobileNav({ activeTab, onTabChange, onScan }) {
     },
     {
       id: "location",
-      label: "Location",
+      label: t("location"),
       icon: (
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
