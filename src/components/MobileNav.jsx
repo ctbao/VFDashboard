@@ -1,7 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useStore } from "@nanostores/react";
+import { chargingLiveStore } from "../stores/chargingLiveStore";
 
-const NavItem = ({ id, label, icon, active, onClick }) => (
+const NavItem = ({ id, label, icon, active, onClick, badge }) => (
   <button
     onClick={() => onClick(id)}
     className={`relative flex-1 flex flex-col items-center justify-center h-full transition-all duration-500 rounded-full z-10 ${active ? "text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
@@ -17,6 +19,10 @@ const NavItem = ({ id, label, icon, active, onClick }) => (
       {React.cloneElement(icon, {
         className: `w-6 h-6 ${active ? "text-blue-600" : "text-gray-500"}`,
       })}
+      {/* Recording indicator dot */}
+      {badge && (
+        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 animate-pulse border border-white" />
+      )}
     </div>
     <span
       className={`relative text-[9px] font-bold uppercase tracking-tight leading-none text-center px-1 transition-all duration-500 ${active ? "opacity-100" : "opacity-80"}`}
@@ -28,6 +34,7 @@ const NavItem = ({ id, label, icon, active, onClick }) => (
 
 export default function MobileNav({ activeTab, onTabChange, onScan }) {
   const { t } = useTranslation("common");
+  const { isRecording } = useStore(chargingLiveStore);
   const tabs = [
     {
       id: "vehicle",
@@ -53,6 +60,21 @@ export default function MobileNav({ activeTab, onTabChange, onScan }) {
             strokeLinejoin="round"
             strokeWidth="2"
             d="M13 10V3L4 14h7v7l9-11h-7z"
+          />
+        </svg>
+      ),
+    },
+    {
+      id: "charging",
+      label: t("charging", "Charge"),
+      badge: isRecording,
+      icon: (
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
       ),

@@ -6,6 +6,19 @@
   "permissions": [
     "core:default",
     {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [{ "path": "$DOWNLOAD/VFDashboard/**" }]
+    },
+    {
+      "identifier": "fs:allow-mkdir",
+      "allow": [{ "path": "$DOWNLOAD/VFDashboard/**" }]
+    },
+    {
+      "identifier": "fs:allow-read-file",
+      "allow": [{ "path": "$DOWNLOAD/VFDashboard/**" }]
+    },
+    "fs:allow-download-read-recursive",
+    {
       "identifier": "http:default",
       "allow": [
         { "url": "https://*.vinfast.vn/**" },

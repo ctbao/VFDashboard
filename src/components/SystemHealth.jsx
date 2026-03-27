@@ -260,6 +260,21 @@ export default function SystemHealth() {
   const safety = getSafetyStatus();
   const service = getServiceStatus();
 
+  const timeAgoShort = (ts) => {
+    const sec = Math.floor((Date.now() - ts) / 1000);
+    if (sec < 60) return `${sec}s ago`;
+    if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
+    return `${Math.floor(sec / 3600)}h ago`;
+  };
+
+  const mqttStatusLabel = mqtt.status === "connected" ? "Connected" : mqtt.status === "connecting" ? "Connecting…" : "Offline";
+  const mqttBg = mqtt.status === "connected" ? "bg-green-50" : mqtt.status === "connecting" ? "bg-blue-50" : "bg-red-50";
+  const mqttTxt = mqtt.status === "connected" ? "text-green-700" : mqtt.status === "connecting" ? "text-blue-700" : "text-red-700";
+  const mqttIconColor = mqtt.status === "connected" ? "text-green-500" : mqtt.status === "connecting" ? "text-blue-500" : "text-red-500";
+  const mqttDetail = mqtt.lastMessageTime
+    ? `Last msg ${timeAgoShort(mqtt.lastMessageTime)} · ${mqtt.messageCount} msgs`
+    : "No messages received";
+
   const items = [
     {
       label: t("vehicle:safetyCheck"),
@@ -338,6 +353,15 @@ export default function SystemHealth() {
       txt: "text-gray-600",
       icon: "chip",
       iconColor: "text-indigo-500",
+    },
+    {
+      label: "MQTT",
+      value: mqttStatusLabel,
+      detail: mqttDetail,
+      bg: mqttBg,
+      txt: mqttTxt,
+      icon: "signal",
+      iconColor: mqttIconColor,
     },
   ];
 
@@ -475,6 +499,22 @@ export default function SystemHealth() {
               strokeLinejoin="round"
               strokeWidth="2"
               d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"
+            />
+          </svg>
+        );
+      case "signal":
+        return (
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
             />
           </svg>
         );

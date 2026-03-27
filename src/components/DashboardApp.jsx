@@ -1,7 +1,8 @@
 import "../i18n";
-import React, { useState, Suspense } from "react";
+import React, { useState, Suspense, useEffect } from "react";
 import { useStore } from "@nanostores/react";
 import { vehicleStore } from "../stores/vehicleStore";
+import { initChargingLiveStore } from "../stores/chargingLiveStore";
 import DashboardController from "./DashboardController";
 import AuthGate from "./AuthGate";
 import VehicleHeader from "./VehicleHeader";
@@ -12,14 +13,18 @@ import DigitalTwin from "./DigitalTwin";
 import SystemHealth from "./SystemHealth";
 import MobileNav from "./MobileNav";
 import ErrorBoundary from "./ErrorBoundary";
+import ChargingLiveCard from "./ChargingLiveCard";
 
 // Lazy load heavy drawers — only fetched when opened
 const ChargingHistoryDrawer = React.lazy(
   () => import("./ChargingHistoryDrawer"),
 );
 const TelemetryDrawer = React.lazy(() => import("./TelemetryDrawer"));
+const ChargingLivePage = React.lazy(() => import("./ChargingLivePage"));
 
 export default function DashboardApp({ vin: initialVin }) {
+  // Initialize charging live store once on mount
+  useEffect(() => { initChargingLiveStore(); }, []);
   const { isInitialized, vin } = useStore(vehicleStore);
   const [activeTab, setActiveTab] = useState("vehicle");
   const [isChargingDrawerOpen, setIsChargingDrawerOpen] = useState(false);
@@ -92,19 +97,35 @@ export default function DashboardApp({ vin: initialVin }) {
               </ErrorBoundary>
             </div>
 
-            {/* RIGHT COLUMN: Environment (Top) + Location (Bottom) */}
+            {/* RIGHT COLUMN: ChargingLive (Top) + Environment + Location (Bottom) */}
             <div
-              className={`md:col-span-3 flex flex-col ${activeTab === "location" ? "gap-0 md:gap-2 flex-1" : "gap-2 hidden md:flex"}`}
+              className={`md:col-span-3 flex flex-col ${activeTab === "location" ? "gap-0 md:gap-2 flex-1" : activeTab === "charging" ? "flex-1 min-h-0" : "gap-2 hidden md:flex"}`}
             >
+              {/* ChargingLive - PC Only */}
+              <div className="hidden md:block">
+                <ErrorBoundary>
+                  <ChargingLiveCard />
+                </ErrorBoundary>
+              </div>
+
               {/* Environment - PC Only */}
               <div className="hidden md:block">
                 <ErrorBoundary>
                   <EnvironmentCard />
                 </ErrorBoundary>
               </div>
+
+              {/* Tab 5: Charging Live - Mobile */}
+              <div
+                className={`${activeTab === "charging" ? "flex-1 block overflow-y-auto scrollbar-none" : "hidden"}`}
+              >
+                <Suspense fallback={null}>
+                  <ChargingLivePage />
+                </Suspense>
+              </div>
               {/* Tab 4: Location */}
               <div
-                className={`${activeTab === "location" ? "flex-1 block" : "hidden md:flex md:flex-1 md:flex-col"}`}
+                className={`${activeTab === "location" ? "flex-1 block" : activeTab === "charging" ? "hidden" : "hidden md:flex md:flex-1 md:flex-col"}`}
               >
                 <ErrorBoundary>
                   <MapCard />

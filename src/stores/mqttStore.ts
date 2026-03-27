@@ -3,6 +3,7 @@ import { map } from "nanostores";
 export interface MqttState {
   status: "disconnected" | "connecting" | "connected" | "error";
   lastMessageTime: number | null;
+  lastDisconnectTime: number | null;
   messageCount: number;
   error: string | null;
 }
@@ -10,6 +11,7 @@ export interface MqttState {
 export const mqttStore = map<MqttState>({
   status: "disconnected",
   lastMessageTime: null,
+  lastDisconnectTime: null,
   messageCount: 0,
   error: null,
 });
@@ -19,6 +21,10 @@ export function setMqttStatus(status: MqttState["status"], error?: string) {
     ...mqttStore.get(),
     status,
     error: error || null,
+    lastDisconnectTime:
+      (status === "disconnected" || status === "error")
+        ? Date.now()
+        : mqttStore.get().lastDisconnectTime,
   });
 }
 
@@ -35,6 +41,7 @@ export function resetMqttStore() {
   mqttStore.set({
     status: "disconnected",
     lastMessageTime: null,
+    lastDisconnectTime: null,
     messageCount: 0,
     error: null,
   });

@@ -1,0 +1,10 @@
+{
+	"appId": "com.vfclub.vfdashboard",
+	"appName": "VFDashboard",
+	"webDir": "dist/client",
+	"server": {
+		"cleartext": false,
+		"androidScheme": "https"
+	},
+	"android": {}
+}

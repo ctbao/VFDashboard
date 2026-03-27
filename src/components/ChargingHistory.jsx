@@ -16,6 +16,8 @@ import {
   setFilterYear,
   setFilterMonth,
 } from "../stores/chargingHistoryStore";
+import { chargingLiveStore, findMatchingSession } from "../stores/chargingLiveStore";
+import ChargingLogModal from "./ChargingLogModal";
 
 function safeNumber(val, fallback = 0) {
   if (val === null || val === undefined) return fallback;
@@ -150,7 +152,7 @@ function getChargingFeeInfo(session) {
   }
 }
 
-function SessionCard({ session, maxEnergy, index }) {
+function SessionCard({ session, maxEnergy, index, onViewLog, hasLog }) {
   const { t } = useTranslation("dashboard");
   // Guard: skip rendering if session is completely invalid
   if (!session || typeof session !== "object") return null;
@@ -302,6 +304,20 @@ function SessionCard({ session, maxEnergy, index }) {
           )}
         </div>
       )}
+
+      {/* View Log button — shown when a local charging log exists for this session */}
+      {hasLog && onViewLog && (
+        <button
+          onClick={onViewLog}
+          className="mt-2 w-full flex items-center justify-center gap-1.5 text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl py-2 transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          View Log
+        </button>
+      )}
     </div>
   );
 }
@@ -421,7 +437,9 @@ export default function ChargingHistory({ inline = false }) {
   const { t } = useTranslation("dashboard");
   const store = useStore(chargingHistoryStore);
   const { vin } = useStore(vehicleStore);
+  const liveStore = useStore(chargingLiveStore);
   const [visibleCount, setVisibleCount] = useState(SCROLL_BATCH);
+  const [logModalSession, setLogModalSession] = useState(null);
   const sentinelRef = useRef(null);
 
   // Fetch whenever VIN changes (including mount)
@@ -626,14 +644,19 @@ export default function ChargingHistory({ inline = false }) {
           inline ? "space-y-3" : "flex-1 overflow-y-auto space-y-3 min-h-0 pr-1"
         }
       >
-        {renderedSessions.map((session, index) => (
-          <MemoSessionCard
-            key={session?.id || `session-${index}`}
-            session={session}
-            maxEnergy={maxEnergy}
-            index={index}
-          />
-        ))}
+        {renderedSessions.map((session, index) => {
+          const matchedLog = session ? findMatchingSession(session.pluggedTime || session.startChargeTime || session.createdDate) : null;
+          return (
+            <MemoSessionCard
+              key={session?.id || `session-${index}`}
+              session={session}
+              maxEnergy={maxEnergy}
+              index={index}
+              hasLog={!!matchedLog}
+              onViewLog={matchedLog ? () => setLogModalSession(matchedLog) : undefined}
+            />
+          );
+        })}
         {/* Infinite scroll sentinel — observed by IntersectionObserver */}
         {hasMoreToRender && (
           <div
@@ -696,6 +719,14 @@ export default function ChargingHistory({ inline = false }) {
           </div>
         )}
       </div>
+
+      {/* Charging Log Modal */}
+      {logModalSession && (
+        <ChargingLogModal
+          session={logModalSession}
+          onClose={() => setLogModalSession(null)}
+        />
+      )}
     </div>
   );
 }

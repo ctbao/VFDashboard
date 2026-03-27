@@ -42,6 +42,7 @@
     "@nanostores/react": "^1.0.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tauri-apps/api": "^2.10.1",
+    "@tauri-apps/plugin-fs": "^2.4.5",
     "@tauri-apps/plugin-http": "^2.5.7",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

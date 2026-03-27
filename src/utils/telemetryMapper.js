@@ -101,6 +101,38 @@ export const TELEMETRY_KEY_MAP = {
   CHARGE_CONTROL_PEAK_OFF_HOUR_END: "charge_schedule_end",
   CHARGE_CONTROL_CURRENT_DEPARTURE_TIME: "departure_time",
   CHARGE_CONTROL_ENABLE_PEAK_OFF_HOUR: "peak_off_hour_enabled",
+  // Live charging power metrics
+  CHARGING_STATUS_CURRENT_POWER: "charging_power_kw",
+  CHARGING_STATUS_VOLTAGE: "charging_voltage_v",
+  CHARGING_STATUS_CURRENT: "charging_current_a",
+
+  // BMS Pack metrics
+  BMS_STATUS_PACK_VOLTAGE: "bms_pack_voltage",
+  BMS_STATUS_BATTERY_PACK_TOTAL_CURRENT: "bms_pack_current",
+  BMS_STATUS_PACK_TEMPERATURE: "bms_pack_temp",
+  BMS_STATUS_BMS_BALANCE_STATUS: "bms_balance_active",
+
+  // BMS Cell Voltage (mV)
+  BMS_STATUS_MIN_CELL_VOLTAGE: "bms_cell_voltage_min_mv",
+  BMS_STATUS_MAX_CELL_VOLTAGE: "bms_cell_voltage_max_mv",
+  BMS_STATUS_CELL_NUMBER_OF_MIN_CELL_VOLTAGE: "bms_cell_number_min_v",
+  BMS_STATUS_CELL_NUMBER_OF_MAX_CELL_VOLTAGE: "bms_cell_number_max_v",
+
+  // BMS Cell Temperature (°C)
+  BMS_STATUS_MIN_CELL_TEMPERATURE: "bms_cell_temp_min",
+  BMS_STATUS_MAX_CELL_TEMPERATURE: "bms_cell_temp_max",
+  BMS_STATUS_PROBE_NUMBER_OF_MAX_CELL_TEMPERATURE: "bms_probe_number_max_temp",
+  BMS_STATUS_PROBE_NUMBER_OF_MIN_CELL_TEMPERATURE: "bms_probe_number_min_temp",
+  BMS_STATUS_DELTA_TEMPERATURE_WARNING_SIGNAL: "bms_delta_temp_warning",
+
+  // BMS Coolant
+  BMS_STATUS_TEMPERATURE_OF_BATTERY_COOLANT_INLET: "bms_coolant_inlet_temp",
+  BMS_STATUS_TEMPERATURE_OF_BATTERY_COOLANT_OUTLET: "bms_coolant_outlet_temp",
+  BMS_STATUS_REQUESTING_THE_COOLING_POWER_REQUIRED_FRO_THE_BATTERY_PACK: "bms_cooling_power_req_w",
+
+  // BMS Safety Warnings
+  BMS_STATUS_ISOLATION_WARNING: "bms_isolation_warning",
+  BMS_STATUS_HVIL_WARNING_SIGNAL: "bms_hvil_warning",
 
   // 5.5 Climate Control (from object 34199)
   CLIMATE_CONTROL_AC_CONTROL_STATUS: "ac_status",

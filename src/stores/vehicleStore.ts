@@ -134,6 +134,43 @@ export interface VehicleState {
   battery_type?: string;
   battery_serial?: string | null;
   battery_manufacture_date?: string | null;
+
+  // Live Charging & BMS Cell Telemetry
+  charging_power_kw?: number | null;       // Real-time kW
+  charging_voltage_v?: number | null;      // Line voltage V
+  charging_current_a?: number | null;      // Line current A
+  ac_charging_gun?: number | null;
+  dc_charging_gun?: number | null;
+  charge_lid_status?: number | null;
+
+  // BMS Pack
+  bms_pack_voltage?: number | null;        // Pack voltage V
+  bms_pack_current?: number | null;        // Pack current A
+  bms_pack_temp?: number | null;           // Average pack temp °C
+  bms_balance_active?: number | null;      // 1 = balancing active
+
+  // BMS Cell Voltage (mV)
+  bms_cell_voltage_min_mv?: number | null;
+  bms_cell_voltage_max_mv?: number | null;
+  bms_cell_number_min_v?: number | null;   // cell index with min V
+  bms_cell_number_max_v?: number | null;   // cell index with max V
+
+  // BMS Cell Temperature (°C)
+  bms_cell_temp_min?: number | null;
+  bms_cell_temp_max?: number | null;
+  bms_probe_number_max_temp?: number | null;
+  bms_probe_number_min_temp?: number | null;
+  bms_delta_temp_warning?: number | null;  // 1 = warning
+
+  // BMS Coolant
+  bms_coolant_inlet_temp?: number | null;
+  bms_coolant_outlet_temp?: number | null;
+  bms_cooling_power_req_w?: number | null;
+
+  // BMS Warnings
+  bms_thermal_runaway?: number | null;     // 1 = critical
+  bms_isolation_warning?: number | null;
+  bms_hvil_warning?: number | null;
   // Full Telemetry Cache
   fullTelemetryData: Record<string, any[]>; // VIN -> Raw Array
   fullTelemetryAliases: Record<string, any[]>; // VIN -> Alias Array
@@ -212,6 +249,33 @@ export const vehicleStore = map<VehicleState>({
   battery_type: "--",
   battery_serial: null,
   battery_manufacture_date: null,
+
+  // Live Charging & BMS Cell Telemetry
+  charging_power_kw: null,
+  charging_voltage_v: null,
+  charging_current_a: null,
+  ac_charging_gun: null,
+  dc_charging_gun: null,
+  charge_lid_status: null,
+  bms_pack_voltage: null,
+  bms_pack_current: null,
+  bms_pack_temp: null,
+  bms_balance_active: null,
+  bms_cell_voltage_min_mv: null,
+  bms_cell_voltage_max_mv: null,
+  bms_cell_number_min_v: null,
+  bms_cell_number_max_v: null,
+  bms_cell_temp_min: null,
+  bms_cell_temp_max: null,
+  bms_probe_number_max_temp: null,
+  bms_probe_number_min_temp: null,
+  bms_delta_temp_warning: null,
+  bms_coolant_inlet_temp: null,
+  bms_coolant_outlet_temp: null,
+  bms_cooling_power_req_w: null,
+  bms_thermal_runaway: null,
+  bms_isolation_warning: null,
+  bms_hvil_warning: null,
 
   // ECU
   bms_version: "--",
@@ -719,6 +783,24 @@ const INITIAL_TELEMETRY: Partial<VehicleState> = {
   battery_serial: null,
   battery_manufacture_date: null,
 
+  // BMS Cell Telemetry (reset on vehicle switch)
+  charging_power_kw: null,
+  charging_voltage_v: null,
+  charging_current_a: null,
+  bms_pack_voltage: null,
+  bms_pack_current: null,
+  bms_pack_temp: null,
+  bms_balance_active: null,
+  bms_cell_voltage_min_mv: null,
+  bms_cell_voltage_max_mv: null,
+  bms_cell_number_min_v: null,
+  bms_cell_number_max_v: null,
+  bms_cell_temp_min: null,
+  bms_cell_temp_max: null,
+  bms_coolant_inlet_temp: null,
+  bms_coolant_outlet_temp: null,
+  bms_thermal_runaway: null,
+
   // Full Telemetry
   fullTelemetryData: {},
   fullTelemetryTimestamps: {},
@@ -812,6 +894,17 @@ const TELEMETRY_PERSIST_FIELDS: Array<keyof VehicleState> = [
   "weather_outside_temp",
   "weather_code",
   "odoLastReceived",
+  // BMS Cell Telemetry
+  "soh_percentage",
+  "bms_pack_temp",
+  "bms_cell_voltage_min_mv",
+  "bms_cell_voltage_max_mv",
+  "bms_cell_temp_min",
+  "bms_cell_temp_max",
+  "bms_coolant_inlet_temp",
+  "bms_coolant_outlet_temp",
+  "bms_balance_active",
+  "bms_thermal_runaway",
 ];
 
 const saveTelemetryToStorage = (vin: string, data: Partial<VehicleState>) => {
