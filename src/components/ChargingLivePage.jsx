@@ -19,6 +19,8 @@ import {
   importSessionsFromFile,
   getLogFolderPath,
 } from "../utils/chargingLogExport";
+import ChargingLogList from "./ChargingLogList";
+import BatteryHealthPage from "./BatteryHealthPage";
 
 // --- Reusable small components ---
 
@@ -181,6 +183,7 @@ export default function ChargingLivePage() {
   const [importStatus, setImportStatus] = useState(null); // { imported, skipped, error }
   const [savedToast, setSavedToast] = useState(null); // { path: string } | null
   const [folderPath, setFolderPath] = useState(null);
+  const [activeTab, setActiveTab] = useState("live");
   const savedToastTimer = useRef(null);
 
   // Resolve folder path once on mount (Tauri only)
@@ -275,7 +278,42 @@ export default function ChargingLivePage() {
   return (
     <div className="flex flex-col gap-4 overflow-y-auto scrollbar-none pb-4 relative">
 
-      {/* ── Saved path toast ── */}
+      {/* ── Tab bar ── */}
+      <div className="flex items-center gap-1 bg-gray-100 rounded-2xl p-1 shrink-0">
+        <button
+          onClick={() => setActiveTab("live")}
+          className={`flex-1 text-sm font-bold py-2 rounded-xl transition-colors ${
+            activeTab === "live" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Live
+        </button>
+        <button
+          onClick={() => setActiveTab("logs")}
+          className={`flex-1 flex items-center justify-center gap-1.5 text-sm font-bold py-2 rounded-xl transition-colors ${
+            activeTab === "logs" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Log History
+          {live.sessions.length > 0 && (
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+              activeTab === "logs" ? "bg-blue-100 text-blue-600" : "bg-gray-200 text-gray-500"
+            }`}>
+              {live.sessions.length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab("health")}
+          className={`flex-1 text-sm font-bold py-2 rounded-xl transition-colors ${
+            activeTab === "health" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Sức khỏe
+        </button>
+      </div>
+
+      {/* ── Saved path toast (always rendered) ── */}
       {savedToast && (
         <div className="fixed bottom-24 left-4 right-4 z-50 flex items-start gap-2 bg-gray-900 text-white text-xs rounded-2xl px-4 py-3 shadow-xl animate-fade-in">
           <svg className="w-4 h-4 text-green-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -290,6 +328,8 @@ export default function ChargingLivePage() {
       )}
 
       {/* ── 1. Status Header ── */}
+      {activeTab === "live" && (
+      <>
       <div className="flex items-center gap-2 px-1 flex-wrap">
         {isCharging ? (
           <>
@@ -618,6 +658,13 @@ export default function ChargingLivePage() {
           </div>
         </SectionCard>
       )}
+      </> )} {/* end live tab */}
+
+      {/* ── Log History tab ── */}
+      {activeTab === "logs" && <ChargingLogList />}
+
+      {/* ── Battery Health tab ── */}
+      {activeTab === "health" && <BatteryHealthPage />}
     </div>
   );
 }

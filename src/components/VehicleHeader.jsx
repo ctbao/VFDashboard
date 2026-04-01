@@ -236,7 +236,7 @@ export default function VehicleHeader({ onOpenCharging, onOpenTelemetry }) {
               </h1>
             )}
 
-            {!vehicle.vin ? (
+            {/* {!vehicle.vin ? (
               <div className="h-3 w-32 bg-gray-100 animate-shimmer rounded mt-2"></div>
             ) : (
               <div className="mt-1.5 flex items-center animate-blur-in">
@@ -247,7 +247,7 @@ export default function VehicleHeader({ onOpenCharging, onOpenTelemetry }) {
                   {vehicle.vin || "..."}
                 </span>
               </div>
-            )}
+            )} */}
           </div>
         </div>
       </div>
@@ -321,33 +321,38 @@ export default function VehicleHeader({ onOpenCharging, onOpenTelemetry }) {
           </div>
 
           {/* MQTT Status */}
-          <div className="hidden md:flex flex-col items-start leading-none pl-2 pr-1 border-l border-gray-200">
+          <div className="flex flex-col items-start leading-none pl-2 pr-1 border-l border-gray-200">
             {mqtt.status === "connected" ? (
               <>
-                <span className="text-[8px] text-green-600 uppercase font-bold tracking-wider mb-0.5">
+                <span className="text-[8px] text-green-600 uppercase font-bold tracking-wider mb-0.5 hidden md:block">
                   {t("common:live")}
                 </span>
-                <span className="text-xs font-mono font-bold text-green-600 tabular-nums leading-none flex items-center gap-1">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                  {t("dashboard:mqttLabel")}
+                <span className="text-[10px] md:text-xs font-mono font-bold text-green-600 tabular-nums leading-none flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 md:w-1.5 md:h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                  <span className="md:hidden">MQTT Live</span>
+                  <span className="hidden md:inline">{t("dashboard:mqttLabel")}</span>
                 </span>
               </>
             ) : mqtt.status === "connecting" ? (
               <>
-                <span className="text-[8px] text-amber-500 uppercase font-bold tracking-wider mb-0.5">
+                <span className="text-[8px] text-amber-500 uppercase font-bold tracking-wider mb-0.5 hidden md:block">
                   {t("common:connecting")}
                 </span>
-                <span className="text-xs font-mono font-bold text-amber-500 tabular-nums leading-none">
-                  {t("dashboard:mqttConnecting")}
+                <span className="text-[10px] md:text-xs font-mono font-bold text-amber-500 tabular-nums leading-none flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 md:w-1.5 md:h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                  <span className="md:hidden">MQTT Connecting</span>
+                  <span className="hidden md:inline">{t("dashboard:mqttConnecting")}</span>
                 </span>
               </>
             ) : (
               <>
-                <span className="text-[8px] text-red-400 uppercase font-bold tracking-wider mb-0.5">
+                <span className="text-[8px] text-red-400 uppercase font-bold tracking-wider mb-0.5 hidden md:block">
                   {t("common:offline")}
                 </span>
-                <span className="text-xs font-mono font-bold text-red-400 tabular-nums leading-none">
-                  {t("dashboard:mqttDisconnected")}
+                <span className="text-[10px] md:text-xs font-mono font-bold text-red-400 tabular-nums leading-none flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 md:w-1.5 md:h-1.5 rounded-full bg-red-400"></span>
+                  <span className="md:hidden">MQTT Offline</span>
+                  <span className="hidden md:inline">{t("dashboard:mqttDisconnected")}</span>
                 </span>
               </>
             )}

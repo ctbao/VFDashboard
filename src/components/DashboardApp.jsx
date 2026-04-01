@@ -3,6 +3,8 @@ import React, { useState, Suspense, useEffect } from "react";
 import { useStore } from "@nanostores/react";
 import { vehicleStore } from "../stores/vehicleStore";
 import { initChargingLiveStore } from "../stores/chargingLiveStore";
+import { initBatteryHealthStore } from "../stores/batteryHealthStore";
+import { startBatteryTracker, stopBatteryTracker } from "../services/batteryTracker";
 import DashboardController from "./DashboardController";
 import AuthGate from "./AuthGate";
 import VehicleHeader from "./VehicleHeader";
@@ -24,9 +26,17 @@ const ChargingLivePage = React.lazy(() => import("./ChargingLivePage"));
 
 export default function DashboardApp({ vin: initialVin }) {
   // Initialize charging live store once on mount
-  useEffect(() => { initChargingLiveStore(); }, []);
+  useEffect(() => {
+    initChargingLiveStore();
+    initBatteryHealthStore();
+    startBatteryTracker();
+    return () => {
+      stopBatteryTracker();
+    };
+  }, []);
   const { isInitialized, vin } = useStore(vehicleStore);
-  const [activeTab, setActiveTab] = useState("vehicle");
+  const isWeb = typeof window !== "undefined" && !window.__TAURI_INTERNALS__;
+  const [activeTab, setActiveTab] = useState(isWeb ? "charging" : "vehicle");
   const [isChargingDrawerOpen, setIsChargingDrawerOpen] = useState(false);
   const [isTelemetryDrawerOpen, setIsTelemetryDrawerOpen] = useState(false);
 

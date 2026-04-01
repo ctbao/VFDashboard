@@ -20,7 +20,9 @@
     "tauri:build": "tauri build",
     "tauri:build:android:signed": "node scripts/build-tauri-android.js",
     "tauri:build:win": "node scripts/build-tauri-win.js",
-    "build:tauri": "node scripts/build-tauri-frontend.js"
+    "build:tauri": "node scripts/build-tauri-frontend.js",
+    "build-android": "ANDROID_KEYSTORE_PATH=\"$HOME/.android/vfdashboard-upload.jks\" ANDROID_KEY_ALIAS=\"vfdashboard\" ANDROID_KEYSTORE_PASSWORD=\"YOUR_PASSWORD\" ANDROID_KEY_PASSWORD=\"YOUR_PASSWORD\" npm run tauri:build:android:signed",
+    "install-samsung" : "adb -s RFCW217KBVP install /Users/bao.cao/Desktop/work/vinfast/VFDashboard/src-tauri/gen/android/app/build/outputs/apk/universal/release/VFDashboard_1.0.0_aarch64_signed.apk"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

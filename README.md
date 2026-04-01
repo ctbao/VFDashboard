@@ -197,6 +197,7 @@ npm run deploy
 | ------------------------------------------------------------ | ------------------------------------- |
 | [API Endpoints](./docs/api/API_ENDPOINTS.md)                 | REST API reference                    |
 | [MQTT Telemetry](./docs/api/MQTT_TELEMETRY.md)               | Real-time data via AWS IoT Core       |
+| [Hướng Dẫn Sử Dụng Tiếng Việt](./docs/USER_GUIDE_VI.md)      | User guide for Dashboard, Charging Live, and Battery Health |
 | [X-HASH Technical Docs](./docs/api/HASH_ANALYSIS_SUMMARY.md) | Dual-layer API signing analysis       |
 | [Proxy Failover](./docs/api/PROXY_FAILOVER.md)               | Multi-proxy 429 failover architecture |
 | [Tauri Windows Build](./docs/TAURI_WINDOWS_BUILD.md)         | Windows native build guide            |

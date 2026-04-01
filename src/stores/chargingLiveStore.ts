@@ -1,6 +1,7 @@
 import { map } from "nanostores";
 import { vehicleStore } from "./vehicleStore";
 import { mqttStore } from "./mqttStore";
+import { addCapacityEstimate, addDcPeakRecord, deleteCapacityEstimate, getActiveVehicleModel } from "./batteryHealthStore";
 
 // Detect Tauri runtime (Android / desktop)
 const isTauri = typeof window !== "undefined" && !!(window as any).__TAURI_INTERNALS__;
@@ -148,6 +149,8 @@ export interface ChargingLogSession {
   gaps?: { startTime: number; endTime: number; durationMs: number }[];
   totalGapMs?: number;
   segmentCount?: number;    // number of continuous recording runs (segments separated by gaps)
+  // Manual binding to API charging history sessions
+  linkedHistoryIds?: string[];
 }
 
 interface ChargingLiveState {
@@ -499,6 +502,58 @@ export function saveSession(session: ChargingLogSession) {
   const updated = [session, ...deduped].slice(0, MAX_SESSIONS);
   persistSessions(updated);
   chargingLiveStore.setKey("sessions", updated);
+
+  const model = getActiveVehicleModel();
+  const deltaSoc =
+    session.initial_soc !== null && session.final_soc !== null
+      ? +(session.final_soc - session.initial_soc).toFixed(1)
+      : null;
+
+  if (
+    session.connector_type === "AC" &&
+    deltaSoc !== null &&
+    deltaSoc >= 20 &&
+    session.initial_soc !== null &&
+    session.final_soc !== null &&
+    session.total_energy_added_kwh !== null &&
+    session.total_energy_added_kwh > 0
+  ) {
+    const socStart = session.initial_soc;
+    const socEnd = session.final_soc;
+    const packEnergyKwh = +session.total_energy_added_kwh.toFixed(2);
+    const gridEnergyKwh = +(packEnergyKwh / Math.max(model.acChargerEfficiency, 0.01)).toFixed(2);
+    const estimatedPackKwh = +(packEnergyKwh / (deltaSoc / 100)).toFixed(2);
+    const estimatedSoh = +((estimatedPackKwh / model.nominalCapacityKwh) * 100).toFixed(1);
+    addCapacityEstimate({
+      id: `cap_${session.id}`,
+      date: session.endTime ?? session.startTime,
+      socStart,
+      socEnd,
+      deltaSoc,
+      gridEnergyKwh,
+      packEnergyKwh,
+      estimatedPackKwh,
+      estimatedSoh,
+      chargeType: session.connector_type,
+      sourceLogId: session.id,
+    });
+  }
+
+  if (session.connector_type === "DC" && session.peak_power_kw !== null && session.peak_power_kw > 0) {
+    const peakSnapshot = session.snapshots.reduce<ChargingSnapshot | null>((selected, snap) => {
+      if (snap.power_kw === null) return selected;
+      if (!selected || (selected.power_kw ?? 0) < snap.power_kw) return snap;
+      return selected;
+    }, null);
+    addDcPeakRecord({
+      id: `dc_${session.id}`,
+      date: session.endTime ?? session.startTime,
+      peakPowerKw: +session.peak_power_kw.toFixed(1),
+      cRate: +(session.peak_power_kw / model.nominalCapacityKwh).toFixed(2),
+      socAtPeak: peakSnapshot?.soc_pct ?? null,
+      sourceLogId: session.id,
+    });
+  }
 }
 
 /** Append new snapshots to an existing session (for joining two recording runs) */
@@ -539,6 +594,77 @@ export function deleteSession(id: string): void {
   const updated = state.sessions.filter((s) => s.id !== id);
   persistSessions(updated);
   chargingLiveStore.setKey("sessions", updated);
+}
+
+/** Bind a local log session to an API charging history session */
+export function bindLogToHistory(
+  logSessionId: string,
+  historySessionId: string,
+  historyTotalKWh?: string | number | null,
+): void {
+  const state = chargingLiveStore.get();
+  const updated = state.sessions.map((s) => {
+    if (s.id !== logSessionId) return s;
+    const ids = s.linkedHistoryIds ?? [];
+    if (ids.includes(historySessionId)) return s;
+    return { ...s, linkedHistoryIds: [...ids, historySessionId] };
+  });
+  persistSessions(updated);
+  chargingLiveStore.setKey("sessions", updated);
+
+  const targetSession = updated.find((item) => item.id === logSessionId) ?? null;
+
+  // Use API grid energy (totalKWCharged) + linked log SOC to produce a more realistic AC capacity estimate.
+  const model = getActiveVehicleModel();
+  const gridEnergyKwh =
+    historyTotalKWh === null || historyTotalKWh === undefined
+      ? null
+      : Number.isFinite(Number(historyTotalKWh))
+        ? Number(historyTotalKWh)
+        : Number.parseFloat(String(historyTotalKWh));
+  if (
+    targetSession &&
+    Number.isFinite(gridEnergyKwh) &&
+    gridEnergyKwh !== null &&
+    gridEnergyKwh > 0 &&
+    targetSession.initial_soc !== null &&
+    targetSession.final_soc !== null
+  ) {
+    const deltaSoc = +(targetSession.final_soc - targetSession.initial_soc).toFixed(1);
+    if (deltaSoc >= 20) {
+      const packEnergyKwh = +(gridEnergyKwh * Math.max(model.acChargerEfficiency, 0.01)).toFixed(2);
+      const estimatedPackKwh = +(packEnergyKwh / (deltaSoc / 100)).toFixed(2);
+      const estimatedSoh = +((estimatedPackKwh / model.nominalCapacityKwh) * 100).toFixed(1);
+      addCapacityEstimate({
+        id: `cap_link_${logSessionId}_${historySessionId}`,
+        date: targetSession.endTime ?? targetSession.startTime,
+        socStart: targetSession.initial_soc,
+        socEnd: targetSession.final_soc,
+        deltaSoc,
+        gridEnergyKwh: +gridEnergyKwh.toFixed(2),
+        packEnergyKwh,
+        estimatedPackKwh,
+        estimatedSoh,
+        chargeType: targetSession.connector_type,
+        sourceLogId: targetSession.id,
+        sourceHistoryId: historySessionId,
+      });
+    }
+  }
+}
+
+/** Remove the binding between a local log session and an API history session */
+export function unbindLogFromHistory(logSessionId: string, historySessionId: string): void {
+  const state = chargingLiveStore.get();
+  const updated = state.sessions.map((s) => {
+    if (s.id !== logSessionId) return s;
+    return { ...s, linkedHistoryIds: (s.linkedHistoryIds ?? []).filter((id) => id !== historySessionId) };
+  });
+  persistSessions(updated);
+  chargingLiveStore.setKey("sessions", updated);
+
+  // Remove capacity estimate that originated from this specific link.
+  deleteCapacityEstimate(`cap_link_${logSessionId}_${historySessionId}`);
 }
 
 /** Find a session matching a charging history record by timestamp proximity */

@@ -4,6 +4,11 @@ Welcome to the technical documentation for the **VinFast Dashboard** project. Th
 
 ## Documentation Structure
 
+### 0. [Hướng Dẫn Sử Dụng Tiếng Việt](./USER_GUIDE_VI.md)
+
+- **Target Audience**: End Users, Testers, Community Members
+- **Contents**: Hướng dẫn đăng nhập, sử dụng Dashboard, Charging Live, Log History, tab Sức khỏe pin, liên kết history API và tạo báo cáo.
+
 ### 1. [Business & Architecture](./01_Business_&_Architecture.md)
 
 - **Target Audience**: Stakeholders, Architects, Developers

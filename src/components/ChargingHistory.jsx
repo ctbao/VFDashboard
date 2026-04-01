@@ -16,7 +16,7 @@ import {
   setFilterYear,
   setFilterMonth,
 } from "../stores/chargingHistoryStore";
-import { chargingLiveStore, findMatchingSession } from "../stores/chargingLiveStore";
+import { chargingLiveStore, findMatchingSession, unbindLogFromHistory, getSessionHealthScore } from "../stores/chargingLiveStore";
 import ChargingLogModal from "./ChargingLogModal";
 
 function safeNumber(val, fallback = 0) {
@@ -152,8 +152,9 @@ function getChargingFeeInfo(session) {
   }
 }
 
-function SessionCard({ session, maxEnergy, index, onViewLog, hasLog }) {
+function SessionCard({ session, maxEnergy, index, onViewLog, hasLog, linkedLogs = [], onOpenLog }) {
   const { t } = useTranslation("dashboard");
+  const [logsOpen, setLogsOpen] = useState(false);
   // Guard: skip rendering if session is completely invalid
   if (!session || typeof session !== "object") return null;
 
@@ -305,8 +306,59 @@ function SessionCard({ session, maxEnergy, index, onViewLog, hasLog }) {
         </div>
       )}
 
-      {/* View Log button — shown when a local charging log exists for this session */}
-      {hasLog && onViewLog && (
+      {/* Linked log badges — shown when logs have been manually bound to this history session */}
+      {linkedLogs.length > 0 ? (
+        <>
+          <button
+            onClick={() => setLogsOpen((v) => !v)}
+            className="mt-2 w-full flex items-center justify-center gap-1.5 text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl py-2 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            {linkedLogs.length} linked log{linkedLogs.length !== 1 ? "s" : ""}
+            <svg
+              className={`w-3 h-3 transition-transform ${logsOpen ? "rotate-180" : ""}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {logsOpen && (
+            <div className="mt-2 space-y-1.5">
+              {linkedLogs.map((log) => {
+                const score = getSessionHealthScore(
+                  log.max_cell_v_delta_mv,
+                  log.max_cell_t_delta,
+                  log.soh_at_end ?? log.soh_at_start
+                );
+                const socStart = log.initial_soc !== null && log.initial_soc !== undefined ? `${Math.round(log.initial_soc)}%` : "?";
+                const socEnd = log.final_soc !== null && log.final_soc !== undefined ? `${Math.round(log.final_soc)}%` : "?";
+                return (
+                  <div key={log.id} className="flex items-center gap-2 bg-indigo-50 rounded-xl px-3 py-2">
+                    <span className={`text-xs font-black shrink-0 ${score.color}`}>{score.grade}</span>
+                    <button
+                      onClick={() => onOpenLog && onOpenLog(log)}
+                      className="flex-1 text-left min-w-0"
+                    >
+                      <span className="text-[11px] font-bold text-gray-700">{formatDate(log.startTime)}</span>
+                      <span className="text-[10px] text-gray-400 ml-1.5">{socStart}→{socEnd}</span>
+                    </button>
+                    <button
+                      onClick={() => unbindLogFromHistory(log.id, session.id)}
+                      className="text-gray-400 hover:text-red-400 transition-colors text-base leading-none shrink-0"
+                      title="Unlink"
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      ) : hasLog && onViewLog && (
         <button
           onClick={onViewLog}
           className="mt-2 w-full flex items-center justify-center gap-1.5 text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl py-2 transition-colors"
@@ -646,6 +698,9 @@ export default function ChargingHistory({ inline = false }) {
       >
         {renderedSessions.map((session, index) => {
           const matchedLog = session ? findMatchingSession(session.pluggedTime || session.startChargeTime || session.createdDate) : null;
+          const linkedLogs = session ? liveStore.sessions.filter(
+            (s) => Array.isArray(s.linkedHistoryIds) && s.linkedHistoryIds.includes(session.id)
+          ) : [];
           return (
             <MemoSessionCard
               key={session?.id || `session-${index}`}
@@ -654,6 +709,8 @@ export default function ChargingHistory({ inline = false }) {
               index={index}
               hasLog={!!matchedLog}
               onViewLog={matchedLog ? () => setLogModalSession(matchedLog) : undefined}
+              linkedLogs={linkedLogs}
+              onOpenLog={setLogModalSession}
             />
           );
         })}
