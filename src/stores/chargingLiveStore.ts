@@ -151,6 +151,7 @@ export interface ChargingLogSession {
   segmentCount?: number;    // number of continuous recording runs (segments separated by gaps)
   // Manual binding to API charging history sessions
   linkedHistoryIds?: string[];
+  notes?: string;
 }
 
 interface ChargingLiveState {
@@ -585,6 +586,25 @@ export function appendToSession(
   merged.max_cell_v_delta_mv = snaps.reduce<number | null>((m, s) => s.cell_voltage_delta_mv !== null ? Math.max(m ?? 0, s.cell_voltage_delta_mv) : m, null);
   merged.max_cell_t_delta = snaps.reduce<number | null>((m, s) => s.cell_temp_delta !== null ? Math.max(m ?? 0, s.cell_temp_delta) : m, null);
   merged.anomaly_flags = detectAnomaly(merged.snapshots);
+  saveSession(merged);
+}
+
+/** Patch editable metadata on a stored session by ID */
+export function patchSession(id: string, patch: Partial<ChargingLogSession>): void {
+  const state = chargingLiveStore.get();
+  const existing = state.sessions.find((session) => session.id === id);
+  if (!existing) return;
+
+  const merged: ChargingLogSession = {
+    ...existing,
+    ...patch,
+    id: existing.id,
+    vin: existing.vin,
+    startTime: existing.startTime,
+    snapshots: existing.snapshots,
+    anomaly_flags: existing.anomaly_flags,
+  };
+
   saveSession(merged);
 }
 

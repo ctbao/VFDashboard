@@ -71,6 +71,7 @@ export interface RangeDiaryEntry {
   acClimateActive?: boolean;
   rangeEstimateStart?: number | null;
   rangeEstimateEnd?: number | null;
+  distanceSource?: "odometer" | "range_estimate";
   note?: string;
 }
 
@@ -300,6 +301,13 @@ export function addRangeDiaryEntry(entry: RangeDiaryEntry) {
   const state = batteryHealthStore.get();
   updateState({
     rangeDiary: [entry, ...state.rangeDiary.filter((item) => item.id !== entry.id)].slice(0, MAX_RANGE_DIARY),
+  });
+}
+
+export function updateRangeDiaryEntry(id: string, patch: Partial<RangeDiaryEntry>) {
+  const state = batteryHealthStore.get();
+  updateState({
+    rangeDiary: state.rangeDiary.map((item) => (item.id === id ? { ...item, ...patch, id: item.id, type: item.type, timestamp: item.timestamp } : item)),
   });
 }
 

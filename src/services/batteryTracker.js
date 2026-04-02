@@ -1,3 +1,4 @@
+import { atom } from "nanostores";
 import { batteryHealthStore, addRangeDiaryEntry, addSocDropAnomaly, classifyWeatherCondition, getActiveVehicleModel } from "../stores/batteryHealthStore";
 import { vehicleStore } from "../stores/vehicleStore";
 
@@ -7,6 +8,22 @@ let trackerTimer = null;
 let activeTrip = null;
 let idleSince = null;
 let serviceStarted = false;
+
+const DEFAULT_TRACKER_STATUS = {
+  running: false,
+  tripInProgress: false,
+  idleSince: null,
+};
+
+export const trackerStatusStore = atom(DEFAULT_TRACKER_STATUS);
+
+function syncTrackerStatus() {
+  trackerStatusStore.set({
+    running: Boolean(trackerTimer),
+    tripInProgress: Boolean(activeTrip && idleSince === null),
+    idleSince,
+  });
+}
 
 function num(value) {
   if (value === null || value === undefined) return null;
@@ -30,8 +47,8 @@ function getOutsideTemp(state) {
 
 function isDriving(state) {
   const speed = num(state.speed) ?? 0;
-  const ignition = state.ignition_status;
-  return speed > 0 || ignition === 1 || ignition === true || ignition === "ON";
+  // const ignition = state.ignition_status;
+  return speed > 0; // || ignition === 1 || ignition === true || ignition === "ON";
 }
 
 function shouldPersistTrip(entry) {
@@ -52,8 +69,19 @@ function buildTripEntry(start, endState) {
   const model = getActiveVehicleModel(state);
   const socEnd = num(endState.battery_level);
   const odoEnd = num(endState.odometer);
-  if (socEnd === null || odoEnd === null) return null;
-  const distanceKm = +(odoEnd - start.odometerStart).toFixed(1);
+  const rangeEnd = num(endState.range);
+  if (socEnd === null) return null;
+
+  let distanceKm = null;
+  let distanceSource = "odometer";
+
+  if (start.odometerStart !== null && start.odometerStart !== undefined && odoEnd !== null) {
+    distanceKm = +(odoEnd - start.odometerStart).toFixed(1);
+  } else if (start.rangeStart !== null && start.rangeStart !== undefined && rangeEnd !== null) {
+    distanceKm = +(Math.max(0, start.rangeStart - rangeEnd)).toFixed(1);
+    distanceSource = "range_estimate";
+  }
+
   if (!Number.isFinite(distanceKm) || distanceKm <= 0) return null;
   const deltaSoc = Math.max(0, start.socStart - socEnd);
   const estimatedKwhUsed = +((deltaSoc * model.nominalCapacityKwh) / 100).toFixed(2);
@@ -66,8 +94,8 @@ function buildTripEntry(start, endState) {
     timestamp: start.timestamp,
     socStart: start.socStart,
     socEnd,
-    odometerStart: start.odometerStart,
-    odometerEnd: odoEnd,
+    odometerStart: start.odometerStart ?? odoEnd ?? 0,
+    odometerEnd: odoEnd ?? start.odometerStart ?? 0,
     distanceKm,
     estimatedKwhUsed,
     kwhPer100km,
@@ -77,7 +105,8 @@ function buildTripEntry(start, endState) {
     weatherCondition: classifyWeatherCondition(outsideTempC, num(endState.weather_code)),
     acClimateActive: (num(endState.fan_speed) ?? 0) > 0,
     rangeEstimateStart: start.rangeStart,
-    rangeEstimateEnd: num(endState.range),
+    rangeEstimateEnd: rangeEnd,
+    distanceSource,
   };
 }
 
@@ -116,21 +145,23 @@ function tick() {
   if (!tracker.autoRecordEnabled) {
     activeTrip = null;
     idleSince = null;
+    syncTrackerStatus();
     return;
   }
 
   const driving = isDriving(vehicle);
   const soc = num(vehicle.battery_level);
   const odometer = num(vehicle.odometer);
+  const rangeKm = num(vehicle.range);
 
-  if (driving && soc !== null && odometer !== null) {
+  if (driving && soc !== null && (odometer !== null || rangeKm !== null)) {
     idleSince = null;
     if (!activeTrip) {
       activeTrip = {
         timestamp: Date.now(),
         socStart: soc,
         odometerStart: odometer,
-        rangeStart: num(vehicle.range),
+        rangeStart: rangeKm,
       };
     }
     if (isTauri && !serviceStarted) {
@@ -147,11 +178,13 @@ function tick() {
         rangeKm: num(vehicle.range) ?? -1,
       });
     }
+    syncTrackerStatus();
     return;
   }
 
   if (activeTrip && idleSince === null) {
     idleSince = Date.now();
+    syncTrackerStatus();
     return;
   }
 
@@ -168,11 +201,14 @@ function tick() {
       invokeForeground("plugin:foreground-service|stopBatteryTracker");
     }
   }
+
+  syncTrackerStatus();
 }
 
 export function startBatteryTracker() {
   if (trackerTimer || typeof window === "undefined") return;
   trackerTimer = window.setInterval(tick, 60000);
+  syncTrackerStatus();
   tick();
 }
 
@@ -187,4 +223,5 @@ export function stopBatteryTracker() {
     serviceStarted = false;
     invokeForeground("plugin:foreground-service|stopBatteryTracker");
   }
+  syncTrackerStatus();
 }

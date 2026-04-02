@@ -16,9 +16,11 @@ import {
   getRangeDiarySummary,
   setActiveVehicleModel,
   setAutoRecordEnabled,
+  updateRangeDiaryEntry,
   updateVehicleModel,
 } from "../stores/batteryHealthStore";
 import { getCellTempDeltaHealth, getCellVoltageDeltaHealth, getSohHealth } from "../stores/chargingLiveStore";
+import { startBatteryTracker, stopBatteryTracker, trackerStatusStore } from "../services/batteryTracker";
 import BatteryReportModal from "./BatteryReportModal";
 
 function Sparkline({ values, color = "#2563eb" }) {
@@ -95,6 +97,7 @@ function weatherBadge(condition) {
 export default function BatteryHealthPage() {
   const battery = useStore(batteryHealthStore);
   const vehicle = useStore(vehicleStore);
+  const trackerStatus = useStore(trackerStatusStore);
   const [showManualForm, setShowManualForm] = useState(false);
   const [showModelForm, setShowModelForm] = useState(false);
   const [modelFormMode, setModelFormMode] = useState("add");
@@ -105,7 +108,16 @@ export default function BatteryHealthPage() {
   const [capShowAll, setCapShowAll] = useState(false);
   const [socBarScale, setSocBarScale] = useState("full");
   const [diaryFilter, setDiaryFilter] = useState("all");
+  const [diaryShowAll, setDiaryShowAll] = useState(false);
+  const [editingDiaryId, setEditingDiaryId] = useState(null);
   const [showReport, setShowReport] = useState(false);
+  const [editDiaryForm, setEditDiaryForm] = useState({
+    outsideTempC: "",
+    weatherCondition: "clear",
+    durationMinutes: "",
+    acClimateActive: false,
+    note: "",
+  });
   const [manualForm, setManualForm] = useState({
     socStart: vehicle.battery_level ? String(Math.round(Number(vehicle.battery_level))) : "",
     socEnd: vehicle.battery_level ? String(Math.round(Number(vehicle.battery_level))) : "",
@@ -136,6 +148,45 @@ export default function BatteryHealthPage() {
     if (diaryFilter === "all") return battery.rangeDiary;
     return battery.rangeDiary.filter((entry) => entry.type === diaryFilter);
   }, [battery.rangeDiary, diaryFilter]);
+  const displayedDiaryEntries = useMemo(
+    () => (diaryShowAll ? visibleDiaryEntries : visibleDiaryEntries.slice(0, 8)),
+    [diaryShowAll, visibleDiaryEntries],
+  );
+  const trackerStatusMeta = useMemo(() => {
+    if (!trackerStatus.running) {
+      return {
+        label: "Tracker đang dừng",
+        dotClass: "bg-gray-400",
+        toneClass: "border-gray-200 bg-gray-50 text-gray-600",
+      };
+    }
+    if (!battery.autoRecordEnabled) {
+      return {
+        label: "Tracker đang bật · Auto record đang tắt",
+        dotClass: "bg-slate-400",
+        toneClass: "border-slate-200 bg-slate-50 text-slate-700",
+      };
+    }
+    if (trackerStatus.idleSince !== null) {
+      return {
+        label: "Vừa kết thúc chuyến đi · đang chờ lưu",
+        dotClass: "bg-sky-500",
+        toneClass: "border-sky-200 bg-sky-50 text-sky-700",
+      };
+    }
+    if (trackerStatus.tripInProgress) {
+      return {
+        label: "Đang ghi nhận chuyến đi",
+        dotClass: "bg-emerald-500 animate-pulse",
+        toneClass: "border-emerald-200 bg-emerald-50 text-emerald-700",
+      };
+    }
+    return {
+      label: "Tracker đang chạy · chưa có chuyến đi",
+      dotClass: "bg-amber-500",
+      toneClass: "border-amber-200 bg-amber-50 text-amber-700",
+    };
+  }, [battery.autoRecordEnabled, trackerStatus.idleSince, trackerStatus.running, trackerStatus.tripInProgress]);
   const visibleCapacityEstimates = useMemo(() => {
     const filtered = capacityTrend.filter((entry) => {
       if (capSourceFilter === "all") return true;
@@ -258,6 +309,36 @@ export default function BatteryHealthPage() {
     setShowManualForm(false);
   }
 
+  function openEditDiaryEntry(entry) {
+    setEditingDiaryId(entry.id);
+    setEditDiaryForm({
+      outsideTempC: entry.outsideTempC === null || entry.outsideTempC === undefined ? "" : String(entry.outsideTempC),
+      weatherCondition: entry.weatherCondition || "clear",
+      durationMinutes: entry.durationMinutes ? String(entry.durationMinutes) : "",
+      acClimateActive: Boolean(entry.acClimateActive),
+      note: entry.note || "",
+    });
+  }
+
+  function handleSaveDiaryEdit(entry) {
+    const outsideTempC = editDiaryForm.outsideTempC === "" ? null : Number(editDiaryForm.outsideTempC);
+    const durationMinutes = editDiaryForm.durationMinutes === "" ? 0 : Number(editDiaryForm.durationMinutes);
+
+    if ((editDiaryForm.outsideTempC !== "" && !Number.isFinite(outsideTempC)) || (editDiaryForm.durationMinutes !== "" && (!Number.isFinite(durationMinutes) || durationMinutes < 0))) {
+      return;
+    }
+
+    updateRangeDiaryEntry(entry.id, {
+      outsideTempC,
+      weatherCondition: editDiaryForm.weatherCondition || classifyWeatherCondition(outsideTempC, vehicle.weather_code),
+      durationMinutes: Number.isFinite(durationMinutes) && durationMinutes > 0 ? durationMinutes : 0,
+      avgSpeedKmh: Number.isFinite(durationMinutes) && durationMinutes > 0 ? +((entry.distanceKm / durationMinutes) * 60).toFixed(1) : null,
+      acClimateActive: editDiaryForm.acClimateActive,
+      note: editDiaryForm.note.trim() || undefined,
+    });
+    setEditingDiaryId(null);
+  }
+
   function openAddModelForm() {
     setModelFormMode("add");
     setEditingModelId(null);
@@ -350,6 +431,136 @@ export default function BatteryHealthPage() {
 
   return (
     <div className="flex flex-col gap-4 pb-4">
+      <Section title="Nhật ký quãng đường vs SoC" hint="Mỗi chuyến đi sẽ cho thấy xe đã dùng bao nhiêu % pin cho bao nhiêu km. App có thể tự ghi khi xe chạy, hoặc bạn nhập thủ công nếu muốn bổ sung.">
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <button onClick={() => setAutoRecordEnabled(!battery.autoRecordEnabled)} className={`rounded-xl px-3 py-2 text-sm font-bold ${battery.autoRecordEnabled ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>
+            {battery.autoRecordEnabled ? "Auto record: Bật" : "Auto record: Tắt"}
+          </button>
+          <button onClick={() => setShowManualForm((value) => !value)} className="rounded-xl bg-blue-50 px-3 py-2 text-sm font-bold text-blue-600 hover:bg-blue-100">
+            {showManualForm ? "Ẩn form thủ công" : "Thêm thủ công"}
+          </button>
+          <div className="text-xs text-gray-500">Tổng {rangeSummary.totalKm.toFixed(1)} km · {rangeSummary.totalEntries} bản ghi</div>
+        </div>
+
+        <div className={`mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border px-3 py-2.5 ${trackerStatusMeta.toneClass}`}>
+          <div className="inline-flex items-center gap-2 text-xs font-bold">
+            <span className={`inline-block h-2.5 w-2.5 rounded-full ${trackerStatusMeta.dotClass}`} />
+            <span>{trackerStatusMeta.label}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => (trackerStatus.running ? stopBatteryTracker() : startBatteryTracker())}
+            className={`rounded-xl px-3 py-2 text-xs font-bold ${
+              trackerStatus.running
+                ? "border border-red-200 bg-white text-red-600 hover:bg-red-50"
+                : "border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50"
+            }`}
+          >
+            {trackerStatus.running ? "Dừng tracker" : "Bật tracker"}
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 mb-3">
+          <button onClick={() => setDiaryFilter("all")} className={`rounded-full px-3 py-1 text-xs font-bold ${diaryFilter === "all" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}>Tất cả</button>
+          <button onClick={() => setDiaryFilter("auto")} className={`rounded-full px-3 py-1 text-xs font-bold ${diaryFilter === "auto" ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-600"}`}>Auto</button>
+          <button onClick={() => setDiaryFilter("manual")} className={`rounded-full px-3 py-1 text-xs font-bold ${diaryFilter === "manual" ? "bg-indigo-600 text-white" : "bg-indigo-50 text-indigo-600"}`}>Manual</button>
+        </div>
+
+        {showManualForm && (
+          <form onSubmit={handleAddManualEntry} className="grid grid-cols-2 gap-2 rounded-2xl border border-blue-100 bg-blue-50/60 p-3 mb-3">
+            <input value={manualForm.socStart} onChange={(event) => setManualForm({ ...manualForm, socStart: event.target.value })} placeholder="SoC đầu (%)" className="rounded-xl border border-blue-100 px-3 py-2 text-sm" />
+            <input value={manualForm.socEnd} onChange={(event) => setManualForm({ ...manualForm, socEnd: event.target.value })} placeholder="SoC cuối (%)" className="rounded-xl border border-blue-100 px-3 py-2 text-sm" />
+            <input value={manualForm.distanceKm} onChange={(event) => setManualForm({ ...manualForm, distanceKm: event.target.value })} placeholder="Quãng đường (km)" className="rounded-xl border border-blue-100 px-3 py-2 text-sm" />
+            <input value={manualForm.durationMinutes} onChange={(event) => setManualForm({ ...manualForm, durationMinutes: event.target.value })} placeholder="Thời gian hoạt động (phút)" className="rounded-xl border border-blue-100 px-3 py-2 text-sm" />
+            <input value={manualForm.outsideTempC} onChange={(event) => setManualForm({ ...manualForm, outsideTempC: event.target.value })} placeholder="Nhiệt độ ngoài trời (°C)" className="rounded-xl border border-blue-100 px-3 py-2 text-sm" />
+            <label className="rounded-xl border border-blue-100 bg-white px-3 py-2 text-sm text-gray-700 flex items-center gap-2">
+              <input type="checkbox" checked={manualForm.acClimateActive} onChange={(event) => setManualForm({ ...manualForm, acClimateActive: event.target.checked })} />
+              Điều hòa đang bật
+            </label>
+            <textarea value={manualForm.note} onChange={(event) => setManualForm({ ...manualForm, note: event.target.value })} placeholder="Ghi chú: ví dụ đường núi, tắc đường, mưa lớn..." className="rounded-xl border border-blue-100 px-3 py-2 text-sm col-span-2 min-h-20" />
+            <div className="col-span-2 flex items-center justify-end gap-2">
+              <button type="button" onClick={() => setShowManualForm(false)} className="rounded-xl bg-white px-3 py-2 text-sm font-bold text-gray-600 border border-gray-200">Hủy</button>
+              <button type="submit" className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-bold text-white">Lưu nhật ký</button>
+            </div>
+          </form>
+        )}
+
+        <div className="space-y-2">
+          {visibleDiaryEntries.length === 0 ? (
+            <div className="rounded-xl bg-gray-50 px-3 py-3 text-sm text-gray-500">Chưa có nhật ký quãng đường. Khi xe chạy và có dữ liệu odometer + SoC, app sẽ tự ghi lại.</div>
+          ) : (
+            displayedDiaryEntries.map((entry) => (
+              <div key={entry.id} className="rounded-xl border border-gray-100 px-3 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2 text-sm font-bold text-gray-800">
+                      <span>{formatDate(entry.timestamp)} · {weatherBadge(entry.weatherCondition)}</span>
+                      {entry.distanceSource === "range_estimate" && (
+                        <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-sky-700">Ước tính</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">{entry.type === "auto" ? "Ghi tự động" : "Nhập tay"} · {entry.socStart}% → {entry.socEnd}% · {entry.distanceKm.toFixed(1)} km · {formatDuration(entry.durationMinutes)}</div>
+                    <div className="text-xs text-gray-500 mt-1">{entry.outsideTempC === null || entry.outsideTempC === undefined ? "--" : `${entry.outsideTempC.toFixed(1)}°C`} · {entry.avgSpeedKmh === null ? "--" : `${entry.avgSpeedKmh.toFixed(1)} km/h`} · {entry.acClimateActive ? "Có dùng điều hòa" : "Không dùng điều hòa"}</div>
+                    {entry.note && <div className="text-xs text-gray-500 mt-1">Ghi chú: {entry.note}</div>}
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-lg font-black text-orange-700">{entry.kwhPer100km.toFixed(1)}</div>
+                    <div className="text-[11px] text-gray-500">kWh/100km</div>
+                    <div className="mt-2 flex items-center justify-end gap-3">
+                      <button onClick={() => openEditDiaryEntry(entry)} className="text-xs font-bold text-blue-600 hover:text-blue-800">Sửa</button>
+                      <button onClick={() => deleteRangeDiaryEntry(entry.id)} className="text-xs font-bold text-red-500 hover:text-red-700">Xóa</button>
+                    </div>
+                  </div>
+                </div>
+                {(entry.weatherCondition === "hot" || entry.weatherCondition === "cold") && (
+                  <div className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                    Tiêu hao của chuyến này có thể cao hơn bình thường do nhiệt độ ngoài trời ảnh hưởng trực tiếp đến pin và điều hòa.
+                  </div>
+                )}
+                {editingDiaryId === entry.id && (
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      handleSaveDiaryEdit(entry);
+                    }}
+                    className="mt-3 grid grid-cols-2 gap-2 rounded-2xl border border-sky-100 bg-sky-50/70 p-3"
+                  >
+                    <input value={editDiaryForm.outsideTempC} onChange={(event) => setEditDiaryForm({ ...editDiaryForm, outsideTempC: event.target.value })} placeholder="Nhiệt độ ngoài trời (°C)" className="rounded-xl border border-sky-100 px-3 py-2 text-sm" />
+                    <input value={editDiaryForm.durationMinutes} onChange={(event) => setEditDiaryForm({ ...editDiaryForm, durationMinutes: event.target.value })} placeholder="Thời gian (phút)" className="rounded-xl border border-sky-100 px-3 py-2 text-sm" />
+                    <select value={editDiaryForm.weatherCondition} onChange={(event) => setEditDiaryForm({ ...editDiaryForm, weatherCondition: event.target.value })} className="rounded-xl border border-sky-100 px-3 py-2 text-sm">
+                      <option value="clear">☀️ Bình thường</option>
+                      <option value="hot">🔥 Nóng</option>
+                      <option value="cold">❄️ Lạnh</option>
+                      <option value="rain">🌧️ Mưa</option>
+                      <option value="cloudy">☁️ Nhiều mây</option>
+                    </select>
+                    <label className="rounded-xl border border-sky-100 bg-white px-3 py-2 text-sm text-gray-700 flex items-center gap-2">
+                      <input type="checkbox" checked={editDiaryForm.acClimateActive} onChange={(event) => setEditDiaryForm({ ...editDiaryForm, acClimateActive: event.target.checked })} />
+                      Điều hòa đang bật
+                    </label>
+                    <textarea value={editDiaryForm.note} onChange={(event) => setEditDiaryForm({ ...editDiaryForm, note: event.target.value })} placeholder="Cập nhật ghi chú hoặc điều kiện chuyến đi..." className="col-span-2 min-h-20 rounded-xl border border-sky-100 px-3 py-2 text-sm" />
+                    <div className="col-span-2 flex items-center justify-end gap-2">
+                      <button type="button" onClick={() => setEditingDiaryId(null)} className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-bold text-gray-600">Hủy</button>
+                      <button type="submit" className="rounded-xl bg-sky-600 px-3 py-2 text-sm font-bold text-white">Lưu cập nhật</button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+        {visibleDiaryEntries.length > 8 && (
+          <div className="mt-3 flex justify-end">
+            <button
+              onClick={() => setDiaryShowAll((value) => !value)}
+              className="rounded-xl bg-gray-100 px-3 py-2 text-xs font-bold text-gray-700 hover:bg-gray-200"
+            >
+              {diaryShowAll ? "Thu gọn" : "Xem tất cả"}
+            </button>
+          </div>
+        )}
+      </Section>
+
       <Section
         title="Tổng quan sức khỏe pin"
         hint="Trang này gom tất cả thông tin dễ hiểu về pin: dung lượng thực tế, tốc độ sạc nhanh, mức tiêu hao, và các dấu hiệu tụt pin nhanh."
@@ -587,72 +798,6 @@ export default function BatteryHealthPage() {
                   <div className="text-lg font-black text-emerald-700">{entry.peakPowerKw.toFixed(1)} kW</div>
                   <div className="text-xs text-gray-500">{entry.cRate.toFixed(2)}C · Chuẩn {activeModel.maxDcPowerKw} kW</div>
                 </div>
-              </div>
-            ))
-          )}
-        </div>
-      </Section>
-
-      <Section title="Nhật ký quãng đường vs SoC" hint="Mỗi chuyến đi sẽ cho thấy xe đã dùng bao nhiêu % pin cho bao nhiêu km. App có thể tự ghi khi xe chạy, hoặc bạn nhập thủ công nếu muốn bổ sung.">
-        <div className="flex flex-wrap items-center gap-2 mb-3">
-          <button onClick={() => setAutoRecordEnabled(!battery.autoRecordEnabled)} className={`rounded-xl px-3 py-2 text-sm font-bold ${battery.autoRecordEnabled ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>
-            {battery.autoRecordEnabled ? "Auto record: Bật" : "Auto record: Tắt"}
-          </button>
-          <button onClick={() => setShowManualForm((value) => !value)} className="rounded-xl bg-blue-50 px-3 py-2 text-sm font-bold text-blue-600 hover:bg-blue-100">
-            {showManualForm ? "Ẩn form thủ công" : "Thêm thủ công"}
-          </button>
-          <div className="text-xs text-gray-500">Tổng {rangeSummary.totalKm.toFixed(1)} km · {rangeSummary.totalEntries} bản ghi</div>
-        </div>
-
-        <div className="flex items-center gap-2 mb-3">
-          <button onClick={() => setDiaryFilter("all")} className={`rounded-full px-3 py-1 text-xs font-bold ${diaryFilter === "all" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}>Tất cả</button>
-          <button onClick={() => setDiaryFilter("auto")} className={`rounded-full px-3 py-1 text-xs font-bold ${diaryFilter === "auto" ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-600"}`}>Auto</button>
-          <button onClick={() => setDiaryFilter("manual")} className={`rounded-full px-3 py-1 text-xs font-bold ${diaryFilter === "manual" ? "bg-indigo-600 text-white" : "bg-indigo-50 text-indigo-600"}`}>Manual</button>
-        </div>
-
-        {showManualForm && (
-          <form onSubmit={handleAddManualEntry} className="grid grid-cols-2 gap-2 rounded-2xl border border-blue-100 bg-blue-50/60 p-3 mb-3">
-            <input value={manualForm.socStart} onChange={(event) => setManualForm({ ...manualForm, socStart: event.target.value })} placeholder="SoC đầu (%)" className="rounded-xl border border-blue-100 px-3 py-2 text-sm" />
-            <input value={manualForm.socEnd} onChange={(event) => setManualForm({ ...manualForm, socEnd: event.target.value })} placeholder="SoC cuối (%)" className="rounded-xl border border-blue-100 px-3 py-2 text-sm" />
-            <input value={manualForm.distanceKm} onChange={(event) => setManualForm({ ...manualForm, distanceKm: event.target.value })} placeholder="Quãng đường (km)" className="rounded-xl border border-blue-100 px-3 py-2 text-sm" />
-            <input value={manualForm.durationMinutes} onChange={(event) => setManualForm({ ...manualForm, durationMinutes: event.target.value })} placeholder="Thời gian hoạt động (phút)" className="rounded-xl border border-blue-100 px-3 py-2 text-sm" />
-            <input value={manualForm.outsideTempC} onChange={(event) => setManualForm({ ...manualForm, outsideTempC: event.target.value })} placeholder="Nhiệt độ ngoài trời (°C)" className="rounded-xl border border-blue-100 px-3 py-2 text-sm" />
-            <label className="rounded-xl border border-blue-100 bg-white px-3 py-2 text-sm text-gray-700 flex items-center gap-2">
-              <input type="checkbox" checked={manualForm.acClimateActive} onChange={(event) => setManualForm({ ...manualForm, acClimateActive: event.target.checked })} />
-              Điều hòa đang bật
-            </label>
-            <textarea value={manualForm.note} onChange={(event) => setManualForm({ ...manualForm, note: event.target.value })} placeholder="Ghi chú: ví dụ đường núi, tắc đường, mưa lớn..." className="rounded-xl border border-blue-100 px-3 py-2 text-sm col-span-2 min-h-20" />
-            <div className="col-span-2 flex items-center justify-end gap-2">
-              <button type="button" onClick={() => setShowManualForm(false)} className="rounded-xl bg-white px-3 py-2 text-sm font-bold text-gray-600 border border-gray-200">Hủy</button>
-              <button type="submit" className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-bold text-white">Lưu nhật ký</button>
-            </div>
-          </form>
-        )}
-
-        <div className="space-y-2">
-          {visibleDiaryEntries.length === 0 ? (
-            <div className="rounded-xl bg-gray-50 px-3 py-3 text-sm text-gray-500">Chưa có nhật ký quãng đường. Khi xe chạy và có dữ liệu odometer + SoC, app sẽ tự ghi lại.</div>
-          ) : (
-            visibleDiaryEntries.slice(0, 8).map((entry) => (
-              <div key={entry.id} className="rounded-xl border border-gray-100 px-3 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-bold text-gray-800">{formatDate(entry.timestamp)} · {weatherBadge(entry.weatherCondition)}</div>
-                    <div className="text-xs text-gray-500 mt-1">{entry.type === "auto" ? "Ghi tự động" : "Nhập tay"} · {entry.socStart}% → {entry.socEnd}% · {entry.distanceKm.toFixed(1)} km · {formatDuration(entry.durationMinutes)}</div>
-                    <div className="text-xs text-gray-500 mt-1">{entry.outsideTempC === null || entry.outsideTempC === undefined ? "--" : `${entry.outsideTempC.toFixed(1)}°C`} · {entry.avgSpeedKmh === null ? "--" : `${entry.avgSpeedKmh.toFixed(1)} km/h`} · {entry.acClimateActive ? "Có dùng điều hòa" : "Không dùng điều hòa"}</div>
-                    {entry.note && <div className="text-xs text-gray-500 mt-1">Ghi chú: {entry.note}</div>}
-                  </div>
-                  <div className="text-right shrink-0">
-                    <div className="text-lg font-black text-orange-700">{entry.kwhPer100km.toFixed(1)}</div>
-                    <div className="text-[11px] text-gray-500">kWh/100km</div>
-                    <button onClick={() => deleteRangeDiaryEntry(entry.id)} className="mt-2 text-xs font-bold text-red-500 hover:text-red-700">Xóa</button>
-                  </div>
-                </div>
-                {(entry.weatherCondition === "hot" || entry.weatherCondition === "cold") && (
-                  <div className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-700">
-                    Tiêu hao của chuyến này có thể cao hơn bình thường do nhiệt độ ngoài trời ảnh hưởng trực tiếp đến pin và điều hòa.
-                  </div>
-                )}
               </div>
             ))
           )}

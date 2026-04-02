@@ -4,6 +4,7 @@ import {
   chargingLiveStore,
   deleteSession,
   getSessionHealthScore,
+  patchSession,
 } from "../stores/chargingLiveStore";
 import { exportSessionAsCSV, exportSessionAsJSON } from "../utils/chargingLogExport";
 import ChargingLogModal from "./ChargingLogModal";
@@ -38,6 +39,27 @@ export default function ChargingLogList() {
   const live = useStore(chargingLiveStore);
   const [selectedSession, setSelectedSession] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [editingSessionId, setEditingSessionId] = useState(null);
+  const [editSessionForm, setEditSessionForm] = useState({
+    connectorType: "unknown",
+    notes: "",
+  });
+
+  function openEditSession(session) {
+    setEditingSessionId(session.id);
+    setEditSessionForm({
+      connectorType: session.connector_type || "unknown",
+      notes: session.notes || "",
+    });
+  }
+
+  function handleSaveSessionEdit(sessionId) {
+    patchSession(sessionId, {
+      connector_type: editSessionForm.connectorType,
+      notes: editSessionForm.notes.trim() || undefined,
+    });
+    setEditingSessionId(null);
+  }
 
   // Sort newest first (store already keeps them newest-first, but be explicit)
   const sessions = [...live.sessions].sort((a, b) => b.startTime - a.startTime);
@@ -105,7 +127,7 @@ export default function ChargingLogList() {
                     <span className="text-sm font-bold text-gray-900">
                       {formatDate(session.startTime)}
                     </span>
-                    {session.connector_type !== "unknown" && (
+                    {(session.connector_type === "AC" || session.connector_type === "DC") && (
                       <span
                         className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                           session.connector_type === "DC"
@@ -123,11 +145,13 @@ export default function ChargingLogList() {
                     )}
                   </div>
                   <div className="flex items-center gap-3 mt-1 flex-wrap">
-                    <span className="text-xs text-gray-600">
-                      {session.initial_soc !== null ? `${Math.round(session.initial_soc)}%` : "?"}
-                      {" → "}
-                      {session.final_soc !== null ? `${Math.round(session.final_soc)}%` : "?"}
-                    </span>
+                    {(session.initial_soc !== null || session.final_soc !== null) && (
+                      <span className="text-xs text-gray-600">
+                        {session.initial_soc !== null ? `${Math.round(session.initial_soc)}%` : "?"}
+                        {" → "}
+                        {session.final_soc !== null ? `${Math.round(session.final_soc)}%` : "?"}
+                      </span>
+                    )}
                     <span className="text-xs text-gray-400">
                       {formatDuration(session.startTime, session.endTime)}
                     </span>
@@ -136,15 +160,20 @@ export default function ChargingLogList() {
                         ⚡ {Number(session.peak_power_kw).toFixed(1)} kW peak
                       </span>
                     )}
-                    <span className="text-xs text-gray-300">
-                      {session.snapshots.length} snap{session.snapshots.length !== 1 ? "s" : ""}
-                    </span>
+                    {session.snapshots.length > 0 && (
+                      <span className="text-xs text-gray-300">
+                        {session.snapshots.length} snap{session.snapshots.length !== 1 ? "s" : ""}
+                      </span>
+                    )}
                   </div>
+                  {session.notes && (
+                    <div className="mt-1 text-xs italic text-gray-500">{session.notes}</div>
+                  )}
                 </button>
               </div>
 
               {/* Action buttons */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={() => setSelectedSession(session)}
                   className="flex-1 flex items-center justify-center gap-1 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl py-2 transition-colors"
@@ -154,6 +183,12 @@ export default function ChargingLogList() {
                       d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                   Details
+                </button>
+                <button
+                  onClick={() => openEditSession(session)}
+                  className="flex items-center justify-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl px-3 py-2 transition-colors"
+                >
+                  Edit
                 </button>
                 <button
                   onClick={() => exportSessionAsCSV(session)}
@@ -178,6 +213,59 @@ export default function ChargingLogList() {
                   </svg>
                 </button>
               </div>
+
+              {editingSessionId === session.id && (
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    handleSaveSessionEdit(session.id);
+                  }}
+                  className="mt-3 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3"
+                >
+                  <div className="mb-2 text-xs font-bold text-emerald-700">Cập nhật thông tin phiên sạc</div>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {[
+                      { value: "AC", label: "AC" },
+                      { value: "DC", label: "DC" },
+                      { value: "unknown", label: "Không rõ" },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setEditSessionForm({ ...editSessionForm, connectorType: option.value })}
+                        className={`rounded-full px-3 py-1 text-xs font-bold ${
+                          editSessionForm.connectorType === option.value
+                            ? "bg-emerald-600 text-white"
+                            : "bg-white text-gray-600 border border-emerald-100"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    value={editSessionForm.notes}
+                    onChange={(event) => setEditSessionForm({ ...editSessionForm, notes: event.target.value })}
+                    placeholder="Ghi chú phiên sạc..."
+                    className="w-full min-h-20 rounded-xl border border-emerald-100 px-3 py-2 text-sm"
+                  />
+                  <div className="mt-2 flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingSessionId(null)}
+                      className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-gray-600 border border-gray-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </form>
+              )}
 
               {/* Delete confirmation */}
               {confirmDeleteId === session.id && (
