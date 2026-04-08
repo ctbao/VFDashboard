@@ -14,6 +14,7 @@ import {
   getDcPeakTrend,
   getLatestSohEstimate,
   getRangeDiarySummary,
+  getStorageUsageSummary,
   setActiveVehicleModel,
   setAutoRecordEnabled,
   updateRangeDiaryEntry,
@@ -22,6 +23,7 @@ import {
 import { getCellTempDeltaHealth, getCellVoltageDeltaHealth, getSohHealth } from "../stores/chargingLiveStore";
 import { startBatteryTracker, stopBatteryTracker, trackerStatusStore } from "../services/batteryTracker";
 import BatteryReportModal from "./BatteryReportModal";
+import ActiveTripCard from "./ActiveTripCard";
 
 function Sparkline({ values, color = "#2563eb" }) {
   const points = values.filter((value) => value !== null && value !== undefined && Number.isFinite(Number(value)));
@@ -111,6 +113,7 @@ export default function BatteryHealthPage() {
   const [diaryShowAll, setDiaryShowAll] = useState(false);
   const [editingDiaryId, setEditingDiaryId] = useState(null);
   const [showReport, setShowReport] = useState(false);
+  const [dismissStorageNotice, setDismissStorageNotice] = useState(false);
   const [editDiaryForm, setEditDiaryForm] = useState({
     outsideTempC: "",
     weatherCondition: "clear",
@@ -144,6 +147,27 @@ export default function BatteryHealthPage() {
   const dcTrend = getDcPeakTrend(battery);
   const rangeSummary = getRangeDiarySummary(battery);
   const latestAnomaly = battery.socDropAnomalies[0] ?? null;
+  const storageUsage = useMemo(() => getStorageUsageSummary(battery), [battery]);
+  const storageWarnings = useMemo(() => ([
+    {
+      key: "diary",
+      label: "Nhật ký quãng đường",
+      count: storageUsage.diaryCount,
+      max: storageUsage.diaryMax,
+    },
+    {
+      key: "estimate",
+      label: "Ước tính dung lượng pin",
+      count: storageUsage.estimateCount,
+      max: storageUsage.estimateMax,
+    },
+    {
+      key: "anomaly",
+      label: "Cảnh báo tụt pin",
+      count: storageUsage.anomalyCount,
+      max: storageUsage.anomalyMax,
+    },
+  ].filter((item) => item.max > 0 && item.count / item.max >= 0.8)), [storageUsage]);
   const visibleDiaryEntries = useMemo(() => {
     if (diaryFilter === "all") return battery.rangeDiary;
     return battery.rangeDiary.filter((entry) => entry.type === diaryFilter);
@@ -160,6 +184,13 @@ export default function BatteryHealthPage() {
         toneClass: "border-gray-200 bg-gray-50 text-gray-600",
       };
     }
+    if (trackerStatus.needsResumePrompt) {
+      return {
+        label: "Có chuyến đi chờ khôi phục",
+        dotClass: "bg-amber-500 animate-pulse",
+        toneClass: "border-amber-200 bg-amber-50 text-amber-700",
+      };
+    }
     if (!battery.autoRecordEnabled) {
       return {
         label: "Tracker đang bật · Auto record đang tắt",
@@ -167,11 +198,18 @@ export default function BatteryHealthPage() {
         toneClass: "border-slate-200 bg-slate-50 text-slate-700",
       };
     }
-    if (trackerStatus.idleSince !== null) {
+    if (trackerStatus.tripState === "countdown") {
       return {
-        label: "Vừa kết thúc chuyến đi · đang chờ lưu",
+        label: "Xe đang dừng lâu · đang đếm ngược tự lưu",
         dotClass: "bg-sky-500",
         toneClass: "border-sky-200 bg-sky-50 text-sky-700",
+      };
+    }
+    if (trackerStatus.tripState === "paused") {
+      return {
+        label: trackerStatus.pauseMode === "manual" ? "Chuyến đi đang tạm dừng thủ công" : "Xe đang dừng tạm · chờ tiếp tục",
+        dotClass: "bg-amber-500",
+        toneClass: "border-amber-200 bg-amber-50 text-amber-700",
       };
     }
     if (trackerStatus.tripInProgress) {
@@ -186,7 +224,7 @@ export default function BatteryHealthPage() {
       dotClass: "bg-amber-500",
       toneClass: "border-amber-200 bg-amber-50 text-amber-700",
     };
-  }, [battery.autoRecordEnabled, trackerStatus.idleSince, trackerStatus.running, trackerStatus.tripInProgress]);
+  }, [battery.autoRecordEnabled, trackerStatus.needsResumePrompt, trackerStatus.pauseMode, trackerStatus.running, trackerStatus.tripInProgress, trackerStatus.tripState]);
   const visibleCapacityEstimates = useMemo(() => {
     const filtered = capacityTrend.filter((entry) => {
       if (capSourceFilter === "all") return true;
@@ -431,6 +469,44 @@ export default function BatteryHealthPage() {
 
   return (
     <div className="flex flex-col gap-4 pb-4">
+      <ActiveTripCard />
+
+      {!dismissStorageNotice && storageWarnings.length > 0 && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-sm font-black">Bộ nhớ log đang gần chạm giới hạn</div>
+              <div className="mt-1 text-xs leading-relaxed">
+                Khi vượt ngưỡng lưu trữ, app sẽ tự xóa dữ liệu cũ nhất để thêm bản ghi mới. Bạn nên tạo báo cáo hoặc rà soát lại log cũ.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDismissStorageNotice(true)}
+              className="rounded-lg border border-amber-200 bg-white px-2.5 py-1 text-[11px] font-bold text-amber-700 hover:bg-amber-100"
+            >
+              Ẩn
+            </button>
+          </div>
+          <div className="mt-3 space-y-2">
+            {storageWarnings.map((item) => {
+              const percent = Math.min(100, Math.round((item.count / item.max) * 100));
+              return (
+                <div key={item.key}>
+                  <div className="mb-1 flex items-center justify-between text-[11px] font-bold">
+                    <span>{item.label}</span>
+                    <span>{item.count}/{item.max} · {percent}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-amber-100">
+                    <div className="h-2 rounded-full bg-amber-500" style={{ width: `${percent}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <Section title="Nhật ký quãng đường vs SoC" hint="Mỗi chuyến đi sẽ cho thấy xe đã dùng bao nhiêu % pin cho bao nhiêu km. App có thể tự ghi khi xe chạy, hoặc bạn nhập thủ công nếu muốn bổ sung.">
         <div className="flex flex-wrap items-center gap-2 mb-3">
           <button onClick={() => setAutoRecordEnabled(!battery.autoRecordEnabled)} className={`rounded-xl px-3 py-2 text-sm font-bold ${battery.autoRecordEnabled ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>
@@ -494,7 +570,10 @@ export default function BatteryHealthPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex flex-wrap items-center gap-2 text-sm font-bold text-gray-800">
-                      <span>{formatDate(entry.timestamp)} · {weatherBadge(entry.weatherCondition)}</span>
+                      <span>
+                        {formatDate(entry.timestamp)} · {weatherBadge(entry.weatherCondition)}
+                        {entry.outsideTempC === null || entry.outsideTempC === undefined ? "" : ` · ${Number(entry.outsideTempC).toFixed(1)}°C`}
+                      </span>
                       {entry.distanceSource === "range_estimate" && (
                         <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-sky-700">Ước tính</span>
                       )}
@@ -816,6 +895,7 @@ export default function BatteryHealthPage() {
                     <div className={`text-sm font-black ${entry.weatherRelated ? "text-amber-700" : "text-red-700"}`}>{formatDate(entry.timestamp)} · {entry.severityMultiplier.toFixed(2)}x bình thường</div>
                     <div className="text-xs text-gray-600 mt-1">{entry.socStart}% → {entry.socEnd}% · {entry.distanceKm.toFixed(1)} km · {formatDuration(entry.durationMinutes)}</div>
                     <div className="text-xs text-gray-600 mt-1">Tiêu hao thực {entry.actualKwhPer100km.toFixed(1)} kWh/100km · kỳ vọng {entry.expectedKwhPer100km.toFixed(1)} kWh/100km</div>
+                    <div className="text-xs text-gray-600 mt-1">Nhiệt độ ngoài trời {entry.outsideTempC === null || entry.outsideTempC === undefined ? "--" : `${Number(entry.outsideTempC).toFixed(1)}°C`} · {entry.weatherRelated ? "Có thể bị ảnh hưởng bởi thời tiết" : "Ít khả năng do thời tiết"}</div>
                   </div>
                   <div className={`text-xs font-bold ${entry.weatherRelated ? "text-amber-700" : "text-red-700"}`}>
                     {entry.weatherRelated ? "Có thể do thời tiết" : "Nên kiểm tra pin"}

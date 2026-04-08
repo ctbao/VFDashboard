@@ -75,6 +75,12 @@ export interface RangeDiaryEntry {
   note?: string;
 }
 
+export interface TrackerConfig {
+  idleTimeoutMs: number;
+  countdownDurationMs: number;
+  maxResumeGapMs: number;
+}
+
 interface BatteryHealthState {
   vehicleModels: VehicleModelProfile[];
   activeModelId: string;
@@ -83,6 +89,7 @@ interface BatteryHealthState {
   dcPeakPowerHistory: DcPeakRecord[];
   rangeDiary: RangeDiaryEntry[];
   autoRecordEnabled: boolean;
+  trackerConfig: TrackerConfig;
 }
 
 const STORAGE_KEY = "vf_battery_health_v1";
@@ -104,6 +111,12 @@ const MAX_ANOMALIES = 100;
 const MAX_DC_PEAKS = 120;
 const MAX_RANGE_DIARY = 300;
 
+const DEFAULT_TRACKER_CONFIG: TrackerConfig = {
+  idleTimeoutMs: 5 * 60 * 1000,
+  countdownDurationMs: 5 * 60 * 1000,
+  maxResumeGapMs: 30 * 60 * 1000,
+};
+
 function defaultState(): BatteryHealthState {
   return {
     vehicleModels: [VF5_MODEL],
@@ -113,6 +126,7 @@ function defaultState(): BatteryHealthState {
     dcPeakPowerHistory: [],
     rangeDiary: [],
     autoRecordEnabled: true,
+    trackerConfig: DEFAULT_TRACKER_CONFIG,
   };
 }
 
@@ -159,6 +173,17 @@ function normalizeList<T>(value: unknown): T[] {
   return Array.isArray(value) ? value as T[] : [];
 }
 
+function normalizeTrackerConfig(raw: any): TrackerConfig {
+  const idleTimeoutMs = safeNumber(raw?.idleTimeoutMs);
+  const countdownDurationMs = safeNumber(raw?.countdownDurationMs);
+  const maxResumeGapMs = safeNumber(raw?.maxResumeGapMs);
+  return {
+    idleTimeoutMs: idleTimeoutMs !== null && idleTimeoutMs >= 60_000 ? idleTimeoutMs : DEFAULT_TRACKER_CONFIG.idleTimeoutMs,
+    countdownDurationMs: countdownDurationMs !== null && countdownDurationMs >= 60_000 ? countdownDurationMs : DEFAULT_TRACKER_CONFIG.countdownDurationMs,
+    maxResumeGapMs: maxResumeGapMs !== null && maxResumeGapMs >= 5 * 60_000 ? maxResumeGapMs : DEFAULT_TRACKER_CONFIG.maxResumeGapMs,
+  };
+}
+
 function loadState(): BatteryHealthState {
   if (typeof window === "undefined") return defaultState();
   try {
@@ -181,6 +206,7 @@ function loadState(): BatteryHealthState {
       dcPeakPowerHistory: normalizeList<DcPeakRecord>(parsed?.dcPeakPowerHistory),
       rangeDiary: normalizeList<RangeDiaryEntry>(parsed?.rangeDiary),
       autoRecordEnabled: parsed?.autoRecordEnabled !== false,
+      trackerConfig: normalizeTrackerConfig(parsed?.trackerConfig),
     };
   } catch {
     return defaultState();
@@ -269,6 +295,16 @@ export function setAutoRecordEnabled(enabled: boolean) {
   updateState({ autoRecordEnabled: enabled });
 }
 
+export function updateTrackerConfig(patch: Partial<TrackerConfig>) {
+  const state = batteryHealthStore.get();
+  updateState({
+    trackerConfig: {
+      ...state.trackerConfig,
+      ...patch,
+    },
+  });
+}
+
 export function addCapacityEstimate(entry: CapacityEstimate) {
   const state = batteryHealthStore.get();
   updateState({
@@ -341,6 +377,19 @@ export function getRangeDiarySummary(state = batteryHealthStore.get()) {
     totalKm: +totalKm.toFixed(1),
     totalMinutes,
     avgKwhPer100km,
+  };
+}
+
+export function getStorageUsageSummary(state = batteryHealthStore.get()) {
+  return {
+    diaryCount: state.rangeDiary.length,
+    diaryMax: MAX_RANGE_DIARY,
+    estimateCount: state.capacityEstimates.length,
+    estimateMax: MAX_CAPACITY_ESTIMATES,
+    anomalyCount: state.socDropAnomalies.length,
+    anomalyMax: MAX_ANOMALIES,
+    dcPeakCount: state.dcPeakPowerHistory.length,
+    dcPeakMax: MAX_DC_PEAKS,
   };
 }
 

@@ -63,6 +63,9 @@ export default function ChargingLogList() {
 
   // Sort newest first (store already keeps them newest-first, but be explicit)
   const sessions = [...live.sessions].sort((a, b) => b.startTime - a.startTime);
+  const protectedCount = sessions.filter((session) => session.keepUntilManualDelete).length;
+  const storageUsedMb = (live.storageUsageBytes / (1024 * 1024)).toFixed(2);
+  const storageQuotaMb = (live.storageQuotaBytes / (1024 * 1024)).toFixed(0);
 
   if (sessions.length === 0) {
     return (
@@ -86,11 +89,34 @@ export default function ChargingLogList() {
   return (
     <>
       <div className="flex flex-col gap-3 pb-4">
-        <div className="px-1 mb-1">
+        <div className="px-1 mb-1 flex items-center justify-between gap-2 flex-wrap">
           <span className="text-xs text-gray-400">
             {sessions.length} session{sessions.length !== 1 ? "s" : ""} stored locally
           </span>
+          {protectedCount > 0 && (
+            <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+              📌 {protectedCount} kept
+            </span>
+          )}
         </div>
+
+        {live.storageWarningLevel !== "normal" && (
+          <div
+            className={`rounded-2xl border p-3 ${
+              live.storageWarningLevel === "critical"
+                ? "border-red-200 bg-red-50"
+                : "border-amber-200 bg-amber-50"
+            }`}
+          >
+            <div className={`text-sm font-bold ${live.storageWarningLevel === "critical" ? "text-red-700" : "text-amber-800"}`}>
+              Storage is getting full ({live.storageUsagePct}%)
+            </div>
+            <p className={`mt-1 text-xs ${live.storageWarningLevel === "critical" ? "text-red-700" : "text-amber-700"}`}>
+              Charging logs are using about {storageUsedMb} / {storageQuotaMb} MB. Delete older sessions you do not need.
+              Sessions marked <span className="font-bold">Keep</span> stay until you remove them manually.
+            </p>
+          </div>
+        )}
 
         {sessions.map((session) => {
           const score = getSessionHealthScore(
@@ -143,6 +169,11 @@ export default function ChargingLogList() {
                         🔗 {linkedCount} linked
                       </span>
                     )}
+                    {session.keepUntilManualDelete && (
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                        📌 Keep
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 mt-1 flex-wrap">
                     {(session.initial_soc !== null || session.final_soc !== null) && (
@@ -189,6 +220,16 @@ export default function ChargingLogList() {
                   className="flex items-center justify-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl px-3 py-2 transition-colors"
                 >
                   Edit
+                </button>
+                <button
+                  onClick={() => patchSession(session.id, { keepUntilManualDelete: !session.keepUntilManualDelete })}
+                  className={`flex items-center justify-center gap-1 text-xs font-bold rounded-xl px-3 py-2 transition-colors ${
+                    session.keepUntilManualDelete
+                      ? "text-amber-800 bg-amber-100 hover:bg-amber-200"
+                      : "text-amber-700 bg-amber-50 hover:bg-amber-100"
+                  }`}
+                >
+                  {session.keepUntilManualDelete ? "Kept" : "Keep"}
                 </button>
                 <button
                   onClick={() => exportSessionAsCSV(session)}
@@ -270,7 +311,11 @@ export default function ChargingLogList() {
               {/* Delete confirmation */}
               {confirmDeleteId === session.id && (
                 <div className="mt-2 bg-red-50 rounded-xl p-3 flex items-center gap-2">
-                  <span className="text-xs text-red-700 flex-1">Delete this session permanently?</span>
+                  <span className="text-xs text-red-700 flex-1">
+                    {session.keepUntilManualDelete
+                      ? "Delete this kept session permanently?"
+                      : "Delete this session permanently?"}
+                  </span>
                   <button
                     onClick={() => {
                       deleteSession(session.id);

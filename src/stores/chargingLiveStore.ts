@@ -39,6 +39,7 @@ export const SOH_THRESHOLDS = {
 } as const;
 
 export type HealthLevel = "excellent" | "good" | "watch" | "concern" | "critical" | "unknown";
+export type StorageWarningLevel = "normal" | "warning" | "critical";
 
 export function getCellVoltageDeltaHealth(deltaMv: number | null): HealthLevel {
   if (deltaMv === null || !Number.isFinite(deltaMv)) return "unknown";
@@ -152,21 +153,31 @@ export interface ChargingLogSession {
   // Manual binding to API charging history sessions
   linkedHistoryIds?: string[];
   notes?: string;
+  keepUntilManualDelete?: boolean;
 }
 
 interface ChargingLiveState {
   isRecording: boolean;
   isCharging: boolean;
   currentSession: ChargingLogSession | null;
-  sessions: ChargingLogSession[];   // max 50, newest first
+  sessions: ChargingLogSession[];   // newest first; kept sessions are exempt from auto-trim
   sampleRateMs: number;             // default 10000
+  storageUsageBytes: number;
+  storageQuotaBytes: number;
+  storageUsagePct: number;
+  storageWarningLevel: StorageWarningLevel;
 }
 
 // --- Constants ---
 const STORAGE_KEY = "vf_charging_live_sessions_v1";
+const CURRENT_SESSION_KEY = "vf_charging_live_current_v1";
 const SETTINGS_KEY = "vf_charging_log_settings_v1";
 const MAX_SESSIONS = 50;
 const DEFAULT_SAMPLE_RATE_MS = 10_000;
+const STORAGE_QUOTA_BYTES = 5 * 1024 * 1024;
+const STORAGE_WARNING_PCT = 80;
+const STORAGE_CRITICAL_PCT = 92;
+const RECOVERY_STALE_MS = 24 * 60 * 60 * 1000;
 
 // --- Store ---
 export const chargingLiveStore = map<ChargingLiveState>({
@@ -175,6 +186,10 @@ export const chargingLiveStore = map<ChargingLiveState>({
   currentSession: null,
   sessions: [],
   sampleRateMs: DEFAULT_SAMPLE_RATE_MS,
+  storageUsageBytes: 0,
+  storageQuotaBytes: STORAGE_QUOTA_BYTES,
+  storageUsagePct: 0,
+  storageWarningLevel: "normal",
 });
 
 // --- Internal state ---
@@ -182,6 +197,72 @@ let _samplingTimer: ReturnType<typeof setInterval> | null = null;
 let _gapStart: number | null = null;  // epoch ms when MQTT offline gap started (null = no gap)
 
 // --- Storage helpers ---
+
+function getApproxBytes(value: string): number {
+  try {
+    return new TextEncoder().encode(value).length;
+  } catch {
+    return value.length * 2;
+  }
+}
+
+function sortSessionsNewestFirst(sessions: ChargingLogSession[]): ChargingLogSession[] {
+  return [...sessions].sort((a, b) => (b.endTime ?? b.startTime) - (a.endTime ?? a.startTime));
+}
+
+function trimSessionsToLimit(sessions: ChargingLogSession[]): ChargingLogSession[] {
+  const sorted = sortSessionsNewestFirst(sessions);
+  const deduped: ChargingLogSession[] = [];
+  const seen = new Set<string>();
+
+  for (const session of sorted) {
+    if (!session?.id || seen.has(session.id)) continue;
+    seen.add(session.id);
+    deduped.push(session);
+  }
+
+  const kept = deduped.filter((session) => session.keepUntilManualDelete);
+  const removable = deduped.filter((session) => !session.keepUntilManualDelete);
+  const keepRemovableCount = Math.max(0, MAX_SESSIONS - kept.length);
+  return [...kept, ...removable.slice(0, keepRemovableCount)]
+    .sort((a, b) => (b.endTime ?? b.startTime) - (a.endTime ?? a.startTime));
+}
+
+function dropOldestRemovableSession(sessions: ChargingLogSession[]): ChargingLogSession[] | null {
+  for (let i = sessions.length - 1; i >= 0; i -= 1) {
+    if (!sessions[i].keepUntilManualDelete) {
+      return sessions.filter((_, index) => index !== i);
+    }
+  }
+  return null;
+}
+
+function refreshStorageMetrics() {
+  if (typeof window === "undefined") return;
+
+  let usageBytes = 0;
+  try {
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const key = window.localStorage.key(i);
+      if (!key || !key.startsWith("vf_")) continue;
+      const value = window.localStorage.getItem(key) ?? "";
+      usageBytes += getApproxBytes(key) + getApproxBytes(value);
+    }
+  } catch {
+    usageBytes = 0;
+  }
+
+  const usagePct = Math.max(0, Math.min(100, Math.round((usageBytes / STORAGE_QUOTA_BYTES) * 100)));
+  const storageWarningLevel: StorageWarningLevel =
+    usagePct >= STORAGE_CRITICAL_PCT ? "critical"
+      : usagePct >= STORAGE_WARNING_PCT ? "warning"
+      : "normal";
+
+  chargingLiveStore.setKey("storageUsageBytes", usageBytes);
+  chargingLiveStore.setKey("storageQuotaBytes", STORAGE_QUOTA_BYTES);
+  chargingLiveStore.setKey("storageUsagePct", usagePct);
+  chargingLiveStore.setKey("storageWarningLevel", storageWarningLevel);
+}
 
 function loadSettings(): { sampleRateMs: number } {
   if (typeof window === "undefined") return { sampleRateMs: DEFAULT_SAMPLE_RATE_MS };
@@ -200,7 +281,10 @@ function persistSettings(sampleRateMs: number) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(SETTINGS_KEY, JSON.stringify({ sampleRateMs }));
-  } catch { /* quota */ }
+  } catch {
+    chargingLiveStore.setKey("storageWarningLevel", "critical");
+  }
+  refreshStorageMetrics();
 }
 
 function loadSessions(): ChargingLogSession[] {
@@ -210,17 +294,112 @@ function loadSessions(): ChargingLogSession[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((s) => s && typeof s.id === "string");
+    return trimSessionsToLimit(parsed.filter((s) => s && typeof s.id === "string"));
   } catch {
     return [];
   }
 }
 
-function persistSessions(sessions: ChargingLogSession[]) {
+function loadCurrentSession(): ChargingLogSession | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(CURRENT_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed.id !== "string" || !Array.isArray(parsed.snapshots)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function clearCurrentSession() {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
-  } catch { /* quota */ }
+    window.localStorage.removeItem(CURRENT_SESSION_KEY);
+  } catch {
+    // ignore
+  }
+  refreshStorageMetrics();
+}
+
+function persistSessions(sessions: ChargingLogSession[]): ChargingLogSession[] {
+  const normalized = trimSessionsToLimit(sessions);
+  if (typeof window === "undefined") return normalized;
+
+  let candidate = normalized;
+  while (true) {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(candidate));
+      refreshStorageMetrics();
+      return candidate;
+    } catch {
+      const next = dropOldestRemovableSession(candidate);
+      if (!next) {
+        chargingLiveStore.setKey("storageWarningLevel", "critical");
+        refreshStorageMetrics();
+        return candidate;
+      }
+      candidate = next;
+    }
+  }
+}
+
+function persistCurrentSession(session: ChargingLogSession) {
+  if (typeof window === "undefined") return;
+
+  const payload = JSON.stringify(session);
+  try {
+    window.localStorage.setItem(CURRENT_SESSION_KEY, payload);
+    refreshStorageMetrics();
+    return;
+  } catch {
+    let sessions = loadSessions();
+
+    while (true) {
+      const next = dropOldestRemovableSession(sessions);
+      if (!next) break;
+      sessions = persistSessions(next);
+      chargingLiveStore.setKey("sessions", sessions);
+
+      try {
+        window.localStorage.setItem(CURRENT_SESSION_KEY, payload);
+        refreshStorageMetrics();
+        return;
+      } catch {
+        // keep freeing removable completed sessions until the active session fits
+      }
+    }
+
+    chargingLiveStore.setKey("storageWarningLevel", "critical");
+    refreshStorageMetrics();
+  }
+}
+
+function flushCurrentSession() {
+  const { currentSession } = chargingLiveStore.get();
+  if (currentSession) {
+    persistCurrentSession(currentSession);
+  }
+}
+
+function recoverInterruptedSession() {
+  const interrupted = loadCurrentSession();
+  if (!interrupted) return;
+
+  const lastTimestamp = interrupted.snapshots.at(-1)?.timestamp ?? interrupted.startTime;
+  if (interrupted.endTime !== null || (Date.now() - lastTimestamp) > RECOVERY_STALE_MS) {
+    clearCurrentSession();
+    return;
+  }
+
+  const recovered = {
+    ...finalizeSession(interrupted),
+    endTime: lastTimestamp,
+  };
+  const updated = persistSessions([recovered, ...chargingLiveStore.get().sessions]);
+  chargingLiveStore.setKey("sessions", updated);
+  clearCurrentSession();
 }
 
 // --- Core snapshot capture ---
@@ -405,6 +584,7 @@ function startSession() {
   chargingLiveStore.setKey("currentSession", session);
   chargingLiveStore.setKey("isRecording", true);
   chargingLiveStore.setKey("isCharging", true);
+  persistCurrentSession(session);
 
   const { sampleRateMs } = chargingLiveStore.get();
 
@@ -431,6 +611,7 @@ function startSession() {
       snapshots: [...state.currentSession.snapshots, snap],
     };
     chargingLiveStore.setKey("currentSession", updatedSession);
+    persistCurrentSession(updatedSession);
 
     // Update foreground service notification every 3rd snapshot
     const idx = updatedSession.snapshots.length;
@@ -462,9 +643,9 @@ function stopSession() {
   // Stop foreground service
   tauriInvoke("plugin:foreground-service|stopService");
 
-  // Prepend to sessions list, keep max 50
-  const updated = [finalized, ...state.sessions].slice(0, MAX_SESSIONS);
-  persistSessions(updated);
+  // Prepend to sessions list, keep max 50 for removable items while respecting kept logs
+  const updated = persistSessions([finalized, ...state.sessions]);
+  clearCurrentSession();
 
   chargingLiveStore.setKey("currentSession", null);
   chargingLiveStore.setKey("sessions", updated);
@@ -491,7 +672,9 @@ export function setSampleRate(ms: number) {
       const stillCharging = vNow.charging_status === 1 || vNow.charging_status === true || Number(vNow.charging_status) === 2;
       if (!stillCharging) { stopSession(); return; }
       const snap = captureSnapshot(s.currentSession);
-      chargingLiveStore.setKey("currentSession", { ...s.currentSession, snapshots: [...s.currentSession.snapshots, snap] });
+      const updatedSession = { ...s.currentSession, snapshots: [...s.currentSession.snapshots, snap] };
+      chargingLiveStore.setKey("currentSession", updatedSession);
+      persistCurrentSession(updatedSession);
     }, clamped);
   }
 }
@@ -500,8 +683,7 @@ export function setSampleRate(ms: number) {
 export function saveSession(session: ChargingLogSession) {
   const state = chargingLiveStore.get();
   const deduped = state.sessions.filter((s) => s.id !== session.id);
-  const updated = [session, ...deduped].slice(0, MAX_SESSIONS);
-  persistSessions(updated);
+  const updated = persistSessions([session, ...deduped]);
   chargingLiveStore.setKey("sessions", updated);
 
   const model = getActiveVehicleModel();
@@ -611,8 +793,7 @@ export function patchSession(id: string, patch: Partial<ChargingLogSession>): vo
 /** Delete a stored session by ID */
 export function deleteSession(id: string): void {
   const state = chargingLiveStore.get();
-  const updated = state.sessions.filter((s) => s.id !== id);
-  persistSessions(updated);
+  const updated = persistSessions(state.sessions.filter((s) => s.id !== id));
   chargingLiveStore.setKey("sessions", updated);
 }
 
@@ -623,13 +804,12 @@ export function bindLogToHistory(
   historyTotalKWh?: string | number | null,
 ): void {
   const state = chargingLiveStore.get();
-  const updated = state.sessions.map((s) => {
+  const updated = persistSessions(state.sessions.map((s) => {
     if (s.id !== logSessionId) return s;
     const ids = s.linkedHistoryIds ?? [];
     if (ids.includes(historySessionId)) return s;
     return { ...s, linkedHistoryIds: [...ids, historySessionId] };
-  });
-  persistSessions(updated);
+  }));
   chargingLiveStore.setKey("sessions", updated);
 
   const targetSession = updated.find((item) => item.id === logSessionId) ?? null;
@@ -676,11 +856,10 @@ export function bindLogToHistory(
 /** Remove the binding between a local log session and an API history session */
 export function unbindLogFromHistory(logSessionId: string, historySessionId: string): void {
   const state = chargingLiveStore.get();
-  const updated = state.sessions.map((s) => {
+  const updated = persistSessions(state.sessions.map((s) => {
     if (s.id !== logSessionId) return s;
     return { ...s, linkedHistoryIds: (s.linkedHistoryIds ?? []).filter((id) => id !== historySessionId) };
-  });
-  persistSessions(updated);
+  }));
   chargingLiveStore.setKey("sessions", updated);
 
   // Remove capacity estimate that originated from this specific link.
@@ -705,6 +884,8 @@ export function initChargingLiveStore() {
   const sessions = loadSessions();
   chargingLiveStore.setKey("sampleRateMs", sampleRateMs);
   chargingLiveStore.setKey("sessions", sessions);
+  recoverInterruptedSession();
+  refreshStorageMetrics();
 
   // Watch vehicleStore for charging status changes
   vehicleStore.subscribe((v) => {
@@ -731,6 +912,7 @@ export function initChargingLiveStore() {
       }
       _gapStart = Date.now();
       chargingLiveStore.setKey("isRecording", false);
+      persistCurrentSession(state.currentSession);
       // Keep isCharging = true so the session is not closed
     } else if (!isOffline && _gapStart !== null && state.isCharging && state.currentSession) {
       // MQTT reconnected — record gap, resume sampling
@@ -744,6 +926,7 @@ export function initChargingLiveStore() {
         segmentCount: (currentSession.segmentCount ?? 1) + 1,
       };
       chargingLiveStore.setKey("currentSession", updatedSession);
+      persistCurrentSession(updatedSession);
       _gapStart = null;
       chargingLiveStore.setKey("isRecording", true);
 
@@ -756,8 +939,16 @@ export function initChargingLiveStore() {
         const stillCharging = vNow.charging_status === 1 || vNow.charging_status === true || Number(vNow.charging_status) === 2;
         if (!stillCharging) { stopSession(); return; }
         const snap = captureSnapshot(s.currentSession);
-        chargingLiveStore.setKey("currentSession", { ...s.currentSession, snapshots: [...s.currentSession.snapshots, snap] });
+        const updatedSession = { ...s.currentSession, snapshots: [...s.currentSession.snapshots, snap] };
+        chargingLiveStore.setKey("currentSession", updatedSession);
+        persistCurrentSession(updatedSession);
       }, sampleRateMs);
     }
   });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) flushCurrentSession();
+  });
+  window.addEventListener("pagehide", flushCurrentSession);
+  window.addEventListener("beforeunload", flushCurrentSession);
 }
